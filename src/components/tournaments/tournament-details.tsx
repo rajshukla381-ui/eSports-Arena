@@ -1,14 +1,14 @@
 
 'use client';
 
-import { Tournament } from '@/lib/types';
+import { Tournament, ChatMessage } from '@/lib/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import Image from 'next/image';
 import { GameIcon } from '../icons/game-icon';
 import { Button } from '../ui/button';
-import { Calendar, Clock, CircleDollarSign, Shield, Users, Trophy } from 'lucide-react';
+import { Calendar, Clock, CircleDollarSign, Shield, Users, Trophy, MessageSquare, Send } from 'lucide-react';
 import TournamentSummaryGenerator from './tournament-summary-generator';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -22,17 +22,31 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { isUserParticipant } from '@/lib/data';
+import { addChatMessage, getChatMessages } from '@/lib/chat';
+import { ScrollArea } from '../ui/scroll-area';
 
 type TournamentDetailsProps = {
   tournament: Tournament;
   onJoin: (tournament: Tournament) => void;
   isAdmin: boolean;
+  currentUserEmail: string;
   onDeclareWinner: (tournament: Tournament, winnerEmail: string, prizeAmount: number) => void;
 };
 
-export default function TournamentDetails({ tournament, onJoin, isAdmin, onDeclareWinner }: TournamentDetailsProps) {
+export default function TournamentDetails({ tournament, onJoin, isAdmin, currentUserEmail, onDeclareWinner }: TournamentDetailsProps) {
+  const [hasJoined, setHasJoined] = useState(false);
+
+  useEffect(() => {
+    const checkParticipation = async () => {
+        const participating = await isUserParticipant(tournament.id, currentUserEmail);
+        setHasJoined(participating);
+    };
+    checkParticipation();
+  }, [tournament.id, currentUserEmail]);
+
   return (
     <Card className="h-full overflow-auto">
       <CardHeader className="p-0">
@@ -73,13 +87,16 @@ export default function TournamentDetails({ tournament, onJoin, isAdmin, onDecla
               <p className="mt-4"><strong>Host:</strong> {tournament.host}</p>
             </div>
         </div>
+
+        {hasJoined || isAdmin ? (
+            <TournamentChat tournamentId={tournament.id} currentUserEmail={currentUserEmail} />
+        ) : (
+            <Button size="lg" className="w-full font-bold text-lg bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow-accent" onClick={() => onJoin(tournament)}>
+                Join Tournament
+            </Button>
+        )}
         
-        <div className="flex gap-4">
-          <Button size="lg" className="w-full font-bold text-lg bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow-accent" onClick={() => onJoin(tournament)}>
-            Join Tournament
-          </Button>
-          {isAdmin && <DeclareWinnerDialog tournament={tournament} onDeclareWinner={onDeclareWinner} />}
-        </div>
+        {isAdmin && <DeclareWinnerDialog tournament={tournament} onDeclareWinner={onDeclareWinner} />}
       </CardContent>
     </Card>
   );
@@ -121,7 +138,7 @@ function DeclareWinnerDialog({ tournament, onDeclareWinner }: { tournament: Tour
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" className="w-full" size="lg"><Trophy className="mr-2"/> Declare Winner</Button>
+                <Button variant="outline" className="w-full"><Trophy className="mr-2"/> Declare Winner</Button>
             </DialogTrigger>
             <DialogContent>
                  <DialogHeader>
@@ -150,3 +167,72 @@ function DeclareWinnerDialog({ tournament, onDeclareWinner }: { tournament: Tour
         </Dialog>
     )
 }
+
+function TournamentChat({ tournamentId, currentUserEmail }: { tournamentId: string, currentUserEmail: string }) {
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [newMessage, setNewMessage] = useState('');
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+    const fetchMessages = useCallback(async () => {
+        const fetchedMessages = await getChatMessages(tournamentId);
+        setMessages(fetchedMessages);
+    }, [tournamentId]);
+
+    useEffect(() => {
+        fetchMessages();
+        const interval = setInterval(fetchMessages, 2000); // Poll for new messages
+        return () => clearInterval(interval);
+    }, [fetchMessages]);
+    
+    useEffect(() => {
+        // Scroll to bottom when new messages arrive
+        if (scrollAreaRef.current) {
+            scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight });
+        }
+    }, [messages]);
+
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newMessage.trim()) {
+            await addChatMessage(tournamentId, currentUserEmail, newMessage);
+            setNewMessage('');
+            fetchMessages(); // Immediately fetch new messages after sending
+        }
+    }
+
+    return (
+        <div className="space-y-4">
+            <h4 className="font-semibold text-lg flex items-center gap-2"><MessageSquare className="text-primary"/> Tournament Chat</h4>
+            <div className="p-4 bg-background rounded-md border h-64 flex flex-col">
+                <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
+                    <div className="space-y-4">
+                        {messages.map(msg => (
+                            <div key={msg.id} className={cn(
+                                "flex items-end gap-2",
+                                msg.userId === currentUserEmail ? "justify-end" : "justify-start"
+                            )}>
+                                <div className={cn(
+                                    "rounded-lg px-3 py-2 max-w-xs",
+                                    msg.userId === currentUserEmail ? "bg-primary text-primary-foreground" : "bg-muted"
+                                )}>
+                                    <p className="text-xs font-bold mb-1 truncate max-w-[100px]">{msg.userId.split('@')[0]}</p>
+                                    <p className="text-sm">{msg.message}</p>
+                                    <p className="text-xs opacity-70 mt-1 text-right">{formatDistanceToNow(new Date(msg.timestamp), { addSuffix: true })}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </ScrollArea>
+                <form onSubmit={handleSendMessage} className="mt-4 flex gap-2">
+                    <Input 
+                        value={newMessage} 
+                        onChange={e => setNewMessage(e.target.value)} 
+                        placeholder="Type a message..."
+                    />
+                    <Button type="submit" size="icon"><Send className="w-4 h-4"/></Button>
+                </form>
+            </div>
+        </div>
+    );
+}
+

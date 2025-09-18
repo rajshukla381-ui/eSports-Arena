@@ -1,6 +1,5 @@
 
 
-
 export type Tournament = {
   id: string;
   title: string;
@@ -64,4 +63,16 @@ export type UserProfile = {
   isBlocked: boolean;
 };
 
+export type TournamentParticipant = {
+    tournamentId: string;
+    userId: string;
+};
+
+export type ChatMessage = {
+    id: string;
+    tournamentId: string;
+    userId: string;
+    message: string;
+    timestamp: string;
+};
     

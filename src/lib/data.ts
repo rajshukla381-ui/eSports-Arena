@@ -1,6 +1,6 @@
 
 
-import { Tournament, Transaction } from '@/lib/types';
+import { Tournament, Transaction, TournamentParticipant } from '@/lib/types';
 import { placeholderImages } from '@/lib/placeholder-images.json';
 
 const ffBanner = placeholderImages.find(p => p.id === 'game-ff');
@@ -69,6 +69,8 @@ let transactionsData: Transaction[] = [
   { id: 't4', date: '2024-07-25', description: 'Redeemed for store credit', amount: 20000, type: 'debit', userId: 'player@example.com' },
 ];
 
+let tournamentParticipantsData: TournamentParticipant[] = [];
+
 
 // Simulate API calls
 export const getTournaments = async (): Promise<Tournament[]> => {
@@ -103,4 +105,24 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
   return new Promise(resolve => setTimeout(() => resolve(newTransaction), 50));
 };
 
+export const getTournamentParticipants = async (tournamentId: string): Promise<TournamentParticipant[]> => {
+    return new Promise(resolve => setTimeout(() => {
+        resolve(tournamentParticipantsData.filter(p => p.tournamentId === tournamentId));
+    }, 50));
+}
+
+export const isUserParticipant = async (tournamentId: string, userId: string): Promise<boolean> => {
+    return new Promise(resolve => setTimeout(() => {
+        resolve(tournamentParticipantsData.some(p => p.tournamentId === tournamentId && p.userId === userId));
+    }, 50));
+}
+
+export const addTournamentParticipant = async (tournamentId: string, userId: string): Promise<TournamentParticipant> => {
+    const newParticipant = { tournamentId, userId };
+    // Avoid adding duplicates
+    if (!await isUserParticipant(tournamentId, userId)) {
+        tournamentParticipantsData.push(newParticipant);
+    }
+    return new Promise(resolve => setTimeout(() => resolve(newParticipant), 50));
+}
     

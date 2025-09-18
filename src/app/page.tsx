@@ -6,7 +6,7 @@ import { Header } from '@/components/layout/header';
 import TournamentDetails from '@/components/tournaments/tournament-details';
 import TournamentList from '@/components/tournaments/tournament-list';
 import WalletHistory from '@/components/wallet/wallet-history';
-import { getTournaments, getTransactions, addTransaction } from '@/lib/data';
+import { getTournaments, getTransactions, addTransaction, addTournamentParticipant } from '@/lib/data';
 import { addCoinRequest } from '@/lib/requests';
 import type { Tournament, Transaction, CoinRequest } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -59,6 +59,8 @@ export default function Home() {
   const handleJoinTournament = async (tournament: Tournament) => {
     if (!user) return;
     
+    await addTournamentParticipant(tournament.id, user.email);
+
     await addNotification({
         userId: user.email,
         message: `You have successfully joined the tournament: "${tournament.title}". Good luck!`,
@@ -68,6 +70,8 @@ export default function Home() {
       title: 'Tournament Joined!',
       description: `Successfully joined ${tournament.title}. Good luck!`,
     });
+    // Re-fetch data to update participation status for chat
+    fetchAndSetData();
   };
 
   const handleWalletAction = (request: Omit<CoinRequest, 'id' | 'date' | 'status' | 'userId'>) => {
@@ -172,6 +176,7 @@ export default function Home() {
                 tournament={selectedTournament}
                 onJoin={handleJoinTournament}
                 isAdmin={isAdmin}
+                currentUserEmail={userEmail}
                 onDeclareWinner={handleDeclareWinner}
               />
             ) : (
