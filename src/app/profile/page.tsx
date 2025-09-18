@@ -31,9 +31,12 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Copy, CircleDollarSign } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function ProfilePage() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.email === 'rajshukla381@gmail.com';
   const [title, setTitle] = useState('');
   const [gameName, setGameName] = useState<'Free Fire' | 'BGMI' | 'Valorant' | ''>('');
   const [entryFee, setEntryFee] = useState('');
@@ -60,7 +63,11 @@ export default function ProfilePage() {
       });
       return;
     }
-    setShowPaymentDialog(true);
+    if (isAdmin) {
+      handlePaymentConfirm();
+    } else {
+      setShowPaymentDialog(true);
+    }
   };
   
   const handlePaymentConfirm = async () => {

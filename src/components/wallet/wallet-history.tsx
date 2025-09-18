@@ -13,9 +13,10 @@ import {
 import { Transaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { ArrowDownLeft, ArrowUpRight, CircleDollarSign } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, CircleDollarSign, Infinity } from 'lucide-react';
 import { Button } from '../ui/button';
 import { WalletActionDialog } from './wallet-action-dialog';
+import { useAuth } from '@/hooks/use-auth';
 
 type WalletHistoryProps = {
   transactions: Transaction[];
@@ -23,6 +24,9 @@ type WalletHistoryProps = {
 };
 
 export default function WalletHistory({ transactions, onWalletAction }: WalletHistoryProps) {
+  const { user } = useAuth();
+  const isAdmin = user?.email === 'rajshukla381@gmail.com';
+
   const currentBalance = transactions.reduce((acc, t) => {
     return t.type === 'credit' ? acc + t.amount : acc - t.amount;
   }, 0);
@@ -33,9 +37,13 @@ export default function WalletHistory({ transactions, onWalletAction }: WalletHi
         <CircleDollarSign className="w-8 h-8 text-primary" />
         <div>
           <CardTitle className="text-2xl font-bold">Wallet</CardTitle>
-          <p className="text-3xl font-bold mt-2 flex items-center gap-2">
-            {currentBalance.toLocaleString()} <span className="text-lg text-muted-foreground">Coins</span>
-          </p>
+          <div className="text-3xl font-bold mt-2 flex items-center gap-2">
+            {isAdmin ? (
+                <Infinity className="w-8 h-8" />
+            ) : (
+                <p>{currentBalance.toLocaleString()} <span className="text-lg text-muted-foreground">Coins</span></p>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4">

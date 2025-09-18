@@ -20,6 +20,7 @@ export default function Home() {
   const { toast } = useToast();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const isAdmin = user?.email === 'rajshukla381@gmail.com';
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -48,7 +49,7 @@ export default function Home() {
   }, 0);
 
   const handleJoinTournament = (tournament: Tournament) => {
-    if (currentBalance < tournament.entryFee) {
+    if (!isAdmin && currentBalance < tournament.entryFee) {
       toast({
         variant: 'destructive',
         title: 'Insufficient Coins',
@@ -64,7 +65,9 @@ export default function Home() {
       amount: tournament.entryFee,
       type: 'debit',
     };
-    setTransactions([newTransaction, ...transactions]);
+    if (!isAdmin) {
+      setTransactions([newTransaction, ...transactions]);
+    }
     toast({
       title: 'Tournament Joined!',
       description: `Successfully joined ${tournament.title}. Good luck!`,
@@ -73,7 +76,7 @@ export default function Home() {
 
   const handleWalletAction = (type: 'credit' | 'debit', amount: number, upiId?: string, screenshot?: File) => {
     if (type === 'debit') {
-      if (amount > currentBalance) {
+      if (amount > currentBalance && !isAdmin) {
         toast({
           variant: 'destructive',
           title: 'Insufficient Coins',
