@@ -1,0 +1,41 @@
+
+{
+    "coinPackages": [
+        {
+            "id": "pkg-1",
+            "amount": 1000,
+            "imageUrl": "https://picsum.photos/seed/coin-pack-1/100/100",
+            "imageHint": "stack coins"
+        },
+        {
+            "id": "pkg-2",
+            "amount": 5000,
+            "imageUrl": "https://picsum.photos/seed/coin-pack-2/100/100",
+            "imageHint": "pile coins"
+        },
+        {
+            "id": "pkg-3",
+            "amount": 10000,
+            "imageUrl": "https://picsum.photos/seed/coin-pack-3/100/100",
+            "imageHint": "treasure chest"
+        },
+        {
+            "id": "pkg-4",
+            "amount": 25000,
+            "imageUrl": "https://picsum.photos/seed/coin-pack-4/100/100",
+            "imageHint": "gold bars"
+        },
+        {
+            "id": "pkg-5",
+            "amount": 50000,
+            "imageUrl": "https://picsum.photos/seed/coin-pack-5/100/100",
+            "imageHint": "diamond pile"
+        },
+        {
+            "id": "pkg-6",
+            "amount": 100000,
+            "imageUrl": "https://picsum.photos/seed/coin-pack-6/100/100",
+            "imageHint": "filled vault"
+        }
+    ]
+}

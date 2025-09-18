@@ -1,3 +1,4 @@
+
 {
   "placeholderImages": [
     {
@@ -23,6 +24,42 @@
       "description": "Placeholder for Valorant game banner",
       "imageUrl": "https://picsum.photos/seed/valorant/400/200",
       "imageHint": "tactical shooter"
+    },
+    {
+      "id": "coin-pack-1",
+      "description": "Small coin pack",
+      "imageUrl": "https://picsum.photos/seed/coin-pack-1/100/100",
+      "imageHint": "stack coins"
+    },
+    {
+      "id": "coin-pack-2",
+      "description": "Medium coin pack",
+      "imageUrl": "https://picsum.photos/seed/coin-pack-2/100/100",
+      "imageHint": "pile coins"
+    },
+    {
+      "id": "coin-pack-3",
+      "description": "Large coin pack",
+      "imageUrl": "https://picsum.photos/seed/coin-pack-3/100/100",
+      "imageHint": "treasure chest"
+    },
+    {
+      "id": "coin-pack-4",
+      "description": "Extra large coin pack",
+      "imageUrl": "https://picsum.photos/seed/coin-pack-4/100/100",
+      "imageHint": "gold bars"
+    },
+    {
+      "id": "coin-pack-5",
+      "description": "Jumbo coin pack",
+      "imageUrl": "https://picsum.photos/seed/coin-pack-5/100/100",
+      "imageHint": "diamond pile"
+    },
+    {
+      "id": "coin-pack-6",
+      "description": "Mega coin pack",
+      "imageUrl": "https://picsum.photos/seed/coin-pack-6/100/100",
+      "imageHint": "filled vault"
     }
   ]
 }
