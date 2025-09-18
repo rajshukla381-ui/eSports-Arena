@@ -1,3 +1,4 @@
+
 import { Tournament, Transaction } from '@/lib/types';
 import { placeholderImages } from '@/lib/placeholder-images.json';
 
@@ -5,7 +6,7 @@ const ffBanner = placeholderImages.find(p => p.id === 'game-ff');
 const bgmiBanner = placeholderImages.find(p => p.id === 'game-bgmi');
 const valorantBanner = placeholderImages.find(p => p.id === 'game-valorant');
 
-const tournamentsData: Tournament[] = [
+let tournamentsData: Tournament[] = [
   {
     id: '1',
     title: 'Free Fire Ultimate Challenge',
@@ -72,8 +73,14 @@ const transactionsData: Transaction[] = [
 
 // Simulate API calls
 export const getTournaments = async (): Promise<Tournament[]> => {
-  return new Promise(resolve => setTimeout(() => resolve(tournamentsData), 50));
+  return new Promise(resolve => setTimeout(() => resolve([...tournamentsData]), 50));
 };
+
+export const addTournament = async (tournament: Omit<Tournament, 'id'>): Promise<Tournament> => {
+    const newTournament = { ...tournament, id: `${Date.now()}` };
+    tournamentsData.unshift(newTournament);
+    return new Promise(resolve => setTimeout(() => resolve(newTournament), 50));
+}
 
 export const getTransactions = async (): Promise<Transaction[]> => {
   return new Promise(resolve => setTimeout(() => resolve(transactionsData), 50));

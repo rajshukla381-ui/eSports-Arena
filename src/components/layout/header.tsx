@@ -1,5 +1,5 @@
 
-import { Swords, User } from 'lucide-react';
+import { Swords, User, Shield } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -56,6 +56,12 @@ export function Header() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <Link href="/admin" passHref>
+                <DropdownMenuItem>
+                  <Shield className="mr-2 h-4 w-4" />
+                  <span>Admin Panel</span>
+                </DropdownMenuItem>
+              </Link>
               <Link href="/profile" passHref>
                 <DropdownMenuItem>
                   <User className="mr-2 h-4 w-4" />
