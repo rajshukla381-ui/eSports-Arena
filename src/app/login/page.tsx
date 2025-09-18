@@ -14,6 +14,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { signIn, user, loading, error } = useAuth();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isEmailSent, setIsEmailSent] = useState(false);
   const { toast } = useToast();
 
@@ -25,17 +26,17 @@ export default function LoginPage() {
 
   const handleSignIn = async (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!email) {
+    if (!email || !password) {
         toast({
             variant: 'destructive',
-            title: 'Email required',
-            description: 'Please enter your email address.',
+            title: 'Fields required',
+            description: 'Please enter your email and password.',
         })
         return;
     }
-    const success = await signIn(email);
+    const success = await signIn(email, password);
     if (success) {
-      setIsEmailSent(true);
+      // User will be redirected by useEffect
     }
   };
 
@@ -50,7 +51,7 @@ export default function LoginPage() {
   }, [error, toast]);
 
 
-  if (loading) {
+  if (loading && !user) {
       return (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
               <p>Loading...</p>
@@ -78,7 +79,7 @@ export default function LoginPage() {
                 </p>
             </div>
         ) : (
-            <div className="w-full space-y-4">
+            <form className="w-full space-y-4" onSubmit={(e) => { e.preventDefault(); handleSignIn(e as any); }}>
                 <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
                     <Input 
@@ -90,10 +91,21 @@ export default function LoginPage() {
                         required
                     />
                 </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input 
+                        id="password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                </div>
                 <Button onClick={handleSignIn} size="lg" className="w-full" disabled={loading}>
-                    Send Sign-in Link
+                    Sign In
                 </Button>
-            </div>
+            </form>
         )}
       </div>
     </div>

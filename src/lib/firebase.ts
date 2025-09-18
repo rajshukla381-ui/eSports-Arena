@@ -1,6 +1,6 @@
 
 import { initializeApp, getApp, getApps } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, signOut as firebaseSignOut } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, signInWithEmailAndPassword, firebaseSignOut as fbSignOut } from 'firebase/auth';
 
 const firebaseConfig = {
   projectId: "studio-6736140775-2ec69",
@@ -16,10 +16,12 @@ const firebaseConfig = {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
+const firebaseSignOut = () => fbSignOut(auth);
+
 
 const actionCodeSettings = {
   url: typeof window !== 'undefined' ? `${window.location.origin}` : 'http://localhost:9002',
   handleCodeInApp: true,
 };
 
-export { auth, provider, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, firebaseSignOut, actionCodeSettings };
+export { auth, provider, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, signInWithEmailAndPassword, firebaseSignOut, actionCodeSettings };

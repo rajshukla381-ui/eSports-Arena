@@ -8,6 +8,7 @@ import {
   sendSignInLinkToEmail, 
   isSignInWithEmailLink,
   signInWithEmailLink,
+  signInWithEmailAndPassword,
   firebaseSignOut,
   actionCodeSettings
 } from '@/lib/firebase';
@@ -20,7 +21,7 @@ type User = {
 type AuthContextType = {
   user: User | null;
   loading: boolean;
-  signIn: (email: string) => Promise<boolean>;
+  signIn: (email: string, password?: string) => Promise<boolean>;
   signOut: () => void;
   error: string | null;
 };
@@ -44,6 +45,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const handleSignInWithEmailLink = useCallback(async () => {
     if (isSignInWithEmailLink(auth, window.location.href)) {
+      setLoading(true);
       let email = window.localStorage.getItem(EMAIL_FOR_SIGN_IN_KEY);
       if (!email) {
         email = window.prompt('Please provide your email for confirmation');
@@ -63,13 +65,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       // Clear the URL of the sign-in link query parameters
       router.replace(window.location.pathname);
+      setLoading(false);
     }
-    setLoading(false);
   }, [router]);
 
 
   useEffect(() => {
-    handleSignInWithEmailLink();
+    if (typeof window !== 'undefined' && isSignInWithEmailLink(auth, window.location.href)) {
+      handleSignInWithEmailLink();
+    }
   }, [searchParams, handleSignInWithEmailLink]);
 
   useEffect(() => {
@@ -81,7 +85,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       
       // Only set loading to false if not in the middle of email link sign-in
-      if (!isSignInWithEmailLink(auth, window.location.href)) {
+      if (typeof window !== 'undefined' && !isSignInWithEmailLink(auth, window.location.href)) {
+        setLoading(false);
+      } else if (typeof window === 'undefined') {
         setLoading(false);
       }
     });
@@ -89,16 +95,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
-  const signIn = async (email: string) => {
+  const signIn = async (email: string, password?: string) => {
     setLoading(true);
     setError(null);
     try {
-      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      window.localStorage.setItem(EMAIL_FOR_SIGN_IN_KEY, email);
+      if (password) {
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        // Fallback or other method
+        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+        window.localStorage.setItem(EMAIL_FOR_SIGN_IN_KEY, email);
+      }
       setLoading(false);
       return true;
     } catch (error: any) {
-      console.error("Email link sending failed:", error);
+      console.error("Sign in failed:", error);
+      // Create user if they don't exist
+      if (error.code === 'auth/user-not-found' && password) {
+          try {
+              const { createUserWithEmailAndPassword } = await import('firebase/auth');
+              await createUserWithEmailAndPassword(auth, email, password);
+              setLoading(false);
+              return true;
+          } catch (creationError: any) {
+               setError(creationError.message);
+               setLoading(false);
+               return false;
+          }
+      }
       setError(error.message);
       setLoading(false);
       return false;
