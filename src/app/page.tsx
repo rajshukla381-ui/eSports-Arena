@@ -110,7 +110,7 @@ export default function Home() {
     } else {
         toast({
             title: 'Redemption Request Sent',
-            description: `Your request to redeem ${request.originalAmount?.toLocaleString()} coins has been sent for approval. You will receive ${request.amount.toLocaleString()} coins.`,
+            description: `Your request has been sent for approval. The amount will be credited to your account within 24-48 hours.`,
         });
     }
   };
