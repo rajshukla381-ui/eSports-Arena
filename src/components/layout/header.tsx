@@ -42,16 +42,16 @@ export function Header() {
                       data-ai-hint={userAvatar.imageHint}
                     />
                   )}
-                  <AvatarFallback>AV</AvatarFallback>
+                  <AvatarFallback>AD</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">GamerTag</p>
+                  <p className="text-sm font-medium leading-none">Admin</p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    gamer@example.com
+                    rajshukla381@gmail.com
                   </p>
                 </div>
               </DropdownMenuLabel>
