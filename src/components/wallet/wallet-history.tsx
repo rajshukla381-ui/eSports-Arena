@@ -1,3 +1,5 @@
+'use client';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -12,12 +14,14 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ArrowDownLeft, ArrowUpRight, Wallet } from 'lucide-react';
 import { Button } from '../ui/button';
+import { WalletActionDialog } from './wallet-action-dialog';
 
 type WalletHistoryProps = {
   transactions: Transaction[];
+  onWalletAction: (type: 'credit' | 'debit', amount: number) => void;
 };
 
-export default function WalletHistory({ transactions }: WalletHistoryProps) {
+export default function WalletHistory({ transactions, onWalletAction }: WalletHistoryProps) {
   const currentBalance = transactions.reduce((acc, t) => {
     return t.type === 'credit' ? acc + t.amount : acc - t.amount;
   }, 0);
@@ -35,8 +39,18 @@ export default function WalletHistory({ transactions }: WalletHistoryProps) {
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-4">
-          <Button>Add Money</Button>
-          <Button variant="outline">Withdraw</Button>
+          <WalletActionDialog
+            action="credit"
+            onConfirm={(amount) => onWalletAction('credit', amount)}
+          >
+            <Button>Add Money</Button>
+          </WalletActionDialog>
+          <WalletActionDialog
+            action="debit"
+            onConfirm={(amount) => onWalletAction('debit', amount)}
+          >
+            <Button variant="outline">Withdraw</Button>
+          </WalletActionDialog>
         </div>
         <h3 className="font-semibold pt-4">Transaction History</h3>
         <div className="flex-1 overflow-auto">

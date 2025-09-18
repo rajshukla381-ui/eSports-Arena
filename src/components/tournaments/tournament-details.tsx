@@ -1,8 +1,9 @@
+'use client';
+
 import { Tournament } from '@/lib/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import Image from 'next/image';
 import { GameIcon } from '../icons/game-icon';
-import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Calendar, Clock, DollarSign, Shield, Users } from 'lucide-react';
 import TournamentSummaryGenerator from './tournament-summary-generator';
@@ -11,9 +12,10 @@ import { cn } from '@/lib/utils';
 
 type TournamentDetailsProps = {
   tournament: Tournament;
+  onJoin: (tournament: Tournament) => void;
 };
 
-export default function TournamentDetails({ tournament }: TournamentDetailsProps) {
+export default function TournamentDetails({ tournament, onJoin }: TournamentDetailsProps) {
   return (
     <Card className="h-full overflow-auto">
       <CardHeader className="p-0">
@@ -55,7 +57,7 @@ export default function TournamentDetails({ tournament }: TournamentDetailsProps
             </div>
         </div>
 
-        <Button size="lg" className="w-full font-bold text-lg bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow-accent">
+        <Button size="lg" className="w-full font-bold text-lg bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow-accent" onClick={() => onJoin(tournament)}>
           Join Tournament
         </Button>
       </CardContent>
