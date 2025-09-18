@@ -93,18 +93,6 @@ export default function Home() {
   const handleWalletAction = (request: Omit<CoinRequest, 'id' | 'date' | 'status' | 'userId'>) => {
     if (!user) return;
     
-    if (request.type === 'debit') {
-      const originalAmount = request.originalAmount || request.amount;
-       if (originalAmount > currentBalance && !isAdmin) {
-        toast({
-          variant: 'destructive',
-          title: 'Insufficient Coins',
-          description: 'You cannot redeem more coins than your current balance.',
-        });
-        return;
-      }
-    }
-    
     addCoinRequest({
       userId: user.email,
       ...request,
@@ -114,11 +102,6 @@ export default function Home() {
         toast({
             title: 'Coin Request Sent',
             description: `Your request to add ${request.amount.toLocaleString()} coins has been sent to the admin for approval.`,
-        });
-    } else {
-        toast({
-            title: 'Redemption Request Sent',
-            description: `Your request has been sent for approval. The amount will be credited to your account within 24-48 hours.`,
         });
     }
   };

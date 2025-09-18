@@ -27,15 +27,12 @@ export type CoinRequest = {
   id: string;
   userId: string;
   date: string;
-  type: 'credit' | 'debit' | 'tournament_creation';
+  type: 'credit' | 'tournament_creation';
   amount: number; // Final amount after deductions for debits (INR), or coin amount for credits
   originalAmount?: number; // Original coin amount before deductions for debits
   status: 'pending' | 'approved' | 'rejected';
-  upiId?: string;
   screenshot?: string; // For simulation, we'll just store a name
   redeemCode?: string;
-  redemptionType?: 'upi' | 'google_play';
-  details?: string; // For storing '₹10 Google Play Code' etc. or the actual sent code
   tournamentDetails?: Omit<Tournament, 'id' | 'status' | 'imageUrl' | 'imageHint'>;
 };
 
@@ -47,5 +44,3 @@ export type Notification = {
     isRead: boolean;
     link?: string;
 };
-
-    

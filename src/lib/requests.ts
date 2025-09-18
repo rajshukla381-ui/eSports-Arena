@@ -32,25 +32,12 @@ export const updateCoinRequestStatus = async (id: string, status: 'approved' | '
                 if (status === 'approved') {
                     if (request.type === 'tournament_creation') {
                         message = `Your tournament "${request.tournamentDetails?.title}" has been approved and is now live!`;
-                    } else if (request.type === 'debit') {
-                        if (request.redemptionType === 'google_play') {
-                             if(redeemCode) {
-                                request.details = redeemCode; // Store sent code
-                                message = `Your request for a ${request.details} has been approved. Your code is: ${redeemCode}`;
-                             } else {
-                                message = `Your request for ${request.details} has been approved.`;
-                             }
-                        } else {
-                            message = `Your redemption request for ${request.originalAmount?.toLocaleString()} coins has been approved.`;
-                        }
                     } else {
                         message = `Your request for ${request.amount.toLocaleString()} coins has been approved.`;
                     }
                 } else {
                      if (request.type === 'tournament_creation') {
                         message = `Your tournament "${request.tournamentDetails?.title}" has been rejected.`;
-                    } else if (request.type === 'debit') {
-                        message = `Your redemption request for ${request.originalAmount?.toLocaleString()} coins has been rejected.`;
                     } else {
                         message = `Your request for ${request.amount.toLocaleString()} coins has been rejected.`;
                     }
@@ -68,5 +55,3 @@ export const updateCoinRequestStatus = async (id: string, status: 'approved' | '
         }, 50)
     });
 }
-
-    

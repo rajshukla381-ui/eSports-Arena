@@ -25,8 +25,8 @@ export default function AdBanner() {
             <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
             <Badge variant="secondary" className="absolute top-2 right-2 text-xs">Ad</Badge>
             <div className="absolute bottom-2 left-3">
-                 <h4 className="text-lg font-bold text-white drop-shadow-md">Your Ad Here</h4>
-                 <p className="text-xs text-white/80 drop-shadow-sm">Click to learn more</p>
+                 <h4 className="text-lg font-bold text-white drop-shadow-md">AdMob Banner</h4>
+                 <p className="text-xs text-white/80 drop-shadow-sm">Your ad could be here!</p>
             </div>
         </div>
     </Link>

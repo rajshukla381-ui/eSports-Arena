@@ -82,8 +82,8 @@
     {
       "id": "ad-banner-1",
       "description": "Placeholder for a vertical ad banner",
-      "imageUrl": "https://picsum.photos/seed/ad1/400/200",
-      "imageHint": "gaming advertisement"
+      "imageUrl": "https://storage.googleapis.com/aifire.dev/Images/e9a3f55a-8b1a-4c2c-a81d-d031c518d2d2.png",
+      "imageHint": "admob banner"
     }
   ]
 }

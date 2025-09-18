@@ -50,20 +50,13 @@ export default function WalletHistory({ transactions, onWalletAction, onRedeemCo
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <WalletActionDialog
             action="credit"
             onConfirm={(request) => onWalletAction(request)}
             onRedeemCode={onRedeemCode}
           >
-            <Button>Get Coins</Button>
-          </WalletActionDialog>
-          <WalletActionDialog
-            action="debit"
-            onConfirm={(request) => onWalletAction(request)}
-            onRedeemCode={onRedeemCode}
-          >
-            <Button variant="outline">Redeem</Button>
+            <Button className="w-full">Get Coins</Button>
           </WalletActionDialog>
         </div>
         <h3 className="font-semibold pt-4">Transaction History</h3>

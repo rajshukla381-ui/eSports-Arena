@@ -11,7 +11,7 @@ import { getCoinRequests, updateCoinRequestStatus } from '@/lib/requests';
 import { addTransaction, addTournament } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { ArrowDownLeft, ArrowUpRight, Check, XIcon, Copy, Gift, CircleDollarSign, IndianRupee, Play, Trophy } from 'lucide-react';
+import { ArrowUpRight, Check, XIcon, Copy, Gift, CircleDollarSign, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -22,25 +22,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { placeholderImages } from '@/lib/placeholder-images.json';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 
 
 export default function AdminPage() {
     const [requests, setRequests] = useState<CoinRequest[]>([]);
-    const [selectedRequest, setSelectedRequest] = useState<CoinRequest | null>(null);
-    const [redeemCode, setRedeemCode] = useState('');
-    const [isSendCodeDialogOpen, setIsSendCodeDialogOpen] = useState(false);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -51,34 +36,12 @@ export default function AdminPage() {
         fetchRequests();
     }, []);
 
-    const openSendCodeDialog = (request: CoinRequest) => {
-        setSelectedRequest(request);
-        setIsSendCodeDialogOpen(true);
-    };
-
-    const handleSendCode = async () => {
-        if (!selectedRequest || !redeemCode) {
-            toast({
-                title: 'Error',
-                description: 'Redeem code cannot be empty.',
-                variant: 'destructive'
-            });
-            return;
-        }
-        
-        await handleRequest(selectedRequest, 'approved', redeemCode);
-
-        setIsSendCodeDialogOpen(false);
-        setRedeemCode('');
-        setSelectedRequest(null);
-    }
-
-    const handleRequest = async (request: CoinRequest, newStatus: 'approved' | 'rejected', code?: string) => {
+    const handleRequest = async (request: CoinRequest, newStatus: 'approved' | 'rejected') => {
         
         if (newStatus === 'approved') {
             let description = '';
             let transactionAmount = 0;
-            let transactionType: 'credit' | 'debit' | 'tournament_creation' = request.type;
+            let transactionType: 'credit' | 'tournament_creation' = request.type;
 
             if (request.type === 'tournament_creation') {
                  const ffBanner = placeholderImages.find(p => p.id === 'game-ff');
@@ -110,7 +73,6 @@ export default function AdminPage() {
                 };
                 await addTournament(newTournament);
                 
-                // This is a debit from the tournament creator's wallet
                 await addTransaction({
                     userId: request.userId,
                     date: new Date().toISOString(),
@@ -127,20 +89,16 @@ export default function AdminPage() {
             } else {
                  description = request.redeemCode 
                     ? `Redeem Code: ${request.redeemCode}`
-                    : request.type === 'credit'
-                    ? 'Coins from Admin'
-                    : request.redemptionType === 'google_play'
-                    ? `Redeemed for ${request.details}`
-                    : 'Redeemed to Admin';
+                    : 'Coins from Admin';
                 
-                transactionAmount = request.type === 'debit' ? request.originalAmount! : request.amount;
+                transactionAmount = request.amount;
 
                 await addTransaction({
                     userId: request.userId,
                     date: new Date().toISOString(),
                     description,
                     amount: transactionAmount,
-                    type: request.type,
+                    type: 'credit',
                 });
 
                  toast({
@@ -155,7 +113,7 @@ export default function AdminPage() {
             });
         }
         
-        await updateCoinRequestStatus(request.id, newStatus, code);
+        await updateCoinRequestStatus(request.id, newStatus);
         
         setRequests(requests.filter(r => r.id !== request.id));
     };
@@ -179,7 +137,7 @@ export default function AdminPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Pending Requests</CardTitle>
-                    <CardDescription>Approve or reject coin, redemption, and tournament creation requests from users.</CardDescription>
+                    <CardDescription>Approve or reject coin and tournament creation requests from users.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -198,36 +156,19 @@ export default function AdminPage() {
                             <TableRow key={request.id}>
                                 <TableCell>{request.userId}</TableCell>
                                 <TableCell>
-                                    <Badge variant={request.type === 'credit' ? 'secondary' : request.type === 'tournament_creation' ? 'default' : 'destructive'}>
-                                        {request.type === 'redeemCode' ? <Gift className="w-4 h-4 mr-1"/> : request.type === 'credit' ? <ArrowUpRight className="w-4 h-4 mr-1"/> : request.type === 'tournament_creation' ? <Trophy className="w-4 h-4 mr-1" /> : <ArrowDownLeft className="w-4 h-4 mr-1"/>}
+                                    <Badge variant={request.type === 'credit' ? 'secondary' : 'default'}>
+                                        {request.type === 'credit' && request.redeemCode ? <Gift className="w-4 h-4 mr-1"/> : request.type === 'credit' ? <ArrowUpRight className="w-4 h-4 mr-1"/> : <Trophy className="w-4 h-4 mr-1" />}
                                         {request.redeemCode ? 'Redeem' : request.type.replace('_', ' ')}
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
                                      <div className="flex flex-col">
                                         <span className="font-bold flex items-center gap-1">
-                                            {request.type === 'debit' ? (
-                                                request.redemptionType === 'google_play' ? (
-                                                     <>{request.details}</>
-                                                ) : (
-                                                    <><IndianRupee className="w-4 h-4" />{request.amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</>
-                                                )
-                                            ) : (
-                                                <><CircleDollarSign className="w-4 h-4" />{request.amount.toLocaleString()}</>
-                                            )}
+                                            <CircleDollarSign className="w-4 h-4" />{request.amount.toLocaleString()}
                                         </span>
-                                        {request.originalAmount && (
-                                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                                (from <CircleDollarSign className="w-3 h-3"/>{request.originalAmount.toLocaleString()})
-                                            </span>
-                                        )}
                                     </div>
                                 </TableCell>
                                 <TableCell className="text-xs max-w-[200px] truncate">
-                                     {request.redemptionType === 'upi' && `UPI: ${request.upiId}`}
-                                     {request.redemptionType === 'google_play' && (
-                                         <Badge variant="outline" className='gap-1'><Play className='w-3 h-3 text-green-500'/> Google Play</Badge>
-                                     )}
                                     {request.type === 'credit' && request.screenshot && `Screenshot: ${request.screenshot}`}
                                     {request.redeemCode && (
                                         <div className="flex items-center gap-2">
@@ -247,11 +188,7 @@ export default function AdminPage() {
                                         size="icon" 
                                         variant="ghost" 
                                         className="text-green-500" 
-                                        onClick={() => 
-                                            request.redemptionType === 'google_play' 
-                                                ? openSendCodeDialog(request) 
-                                                : handleRequest(request, 'approved')
-                                        }>
+                                        onClick={() => handleRequest(request, 'approved')}>
                                         <Check className="w-5 h-5" />
                                     </Button>
                                     <Button size="icon" variant="ghost" className="text-red-500" onClick={() => handleRequest(request, 'rejected')}>
@@ -273,35 +210,6 @@ export default function AdminPage() {
 
         </div>
       </main>
-
-       <Dialog open={isSendCodeDialogOpen} onOpenChange={setIsSendCodeDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Send Google Play Code</DialogTitle>
-            <DialogDescription>
-              Enter the Google Play redeem code to send to {selectedRequest?.userId} for their request of a {selectedRequest?.details}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-              <Label htmlFor="redeem-code">Redeem Code</Label>
-              <Textarea
-                id="redeem-code"
-                value={redeemCode}
-                onChange={(e) => setRedeemCode(e.target.value)}
-                placeholder="Enter the code to send to the user"
-                className="min-h-[100px]"
-              />
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-                <Button variant="outline" onClick={() => { setRedeemCode(''); setSelectedRequest(null); }}>Cancel</Button>
-            </DialogClose>
-            <Button onClick={handleSendCode}>Send Code</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
-
-    
