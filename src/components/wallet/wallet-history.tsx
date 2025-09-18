@@ -11,7 +11,7 @@ import { Transaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ArrowDownLeft, ArrowUpRight, Wallet } from 'lucide-react';
-import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 
 type WalletHistoryProps = {
   transactions: Transaction[];
@@ -34,7 +34,11 @@ export default function WalletHistory({ transactions }: WalletHistoryProps) {
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4">
-        <h3 className="font-semibold">Transaction History</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <Button>Add Money</Button>
+          <Button variant="outline">Withdraw</Button>
+        </div>
+        <h3 className="font-semibold pt-4">Transaction History</h3>
         <div className="flex-1 overflow-auto">
           <Table>
             <TableHeader>
