@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Bell, Circle } from 'lucide-react';
+import { Bell, Circle, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -18,10 +18,12 @@ import { Notification } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { ScrollArea } from '../ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export function NotificationBell() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
@@ -45,10 +47,37 @@ export function NotificationBell() {
       prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
     );
   };
+
+  const copyToClipboard = (text: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(text);
+    toast({ title: 'Copied!', description: `Redeem code copied to clipboard.` });
+  }
   
   const unreadCount = useMemo(() => {
       return notifications.filter(n => !n.isRead).length;
   }, [notifications]);
+
+  const renderMessage = (message: string) => {
+    const codeRegex = /Your code is: ([A-Z0-9]+)/;
+    const match = message.match(codeRegex);
+
+    if (match && match[1]) {
+      const code = match[1];
+      const parts = message.split(code);
+      return (
+        <p className="text-sm leading-snug">
+          {parts[0]}
+          <span className="font-mono bg-muted text-muted-foreground px-2 py-1 rounded-md my-1 inline-block">{code}</span>
+          <Button variant="ghost" size="icon" className="h-6 w-6 inline-flex ml-2" onClick={(e) => copyToClipboard(code, e)}>
+            <Copy className="h-3 w-3" />
+          </Button>
+          {parts[1]}
+        </p>
+      );
+    }
+    return <p className="text-sm leading-snug">{message}</p>;
+  }
 
   if (!user) return null;
 
@@ -65,7 +94,7 @@ export function NotificationBell() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80" align="end">
+      <DropdownMenuContent className="w-80 md:w-96" align="end">
         <DropdownMenuLabel>Notifications</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <ScrollArea className="h-[300px]">
@@ -80,7 +109,7 @@ export function NotificationBell() {
                     <Circle className="h-2 w-2 mt-1.5 fill-accent text-accent" />
                 )}
                 <div className={cn("flex-1", notification.isRead && "ml-[14px]")}>
-                    <p className="text-sm leading-snug">{notification.message}</p>
+                    {renderMessage(notification.message)}
                     <p className="text-xs text-muted-foreground mt-1">
                         {formatDistanceToNow(new Date(notification.date), { addSuffix: true })}
                     </p>
