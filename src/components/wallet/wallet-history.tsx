@@ -17,19 +17,54 @@ import { ArrowDownLeft, ArrowUpRight, CircleDollarSign, Infinity } from 'lucide-
 import { Button } from '../ui/button';
 import { WalletActionDialog } from './wallet-action-dialog';
 import { useAuth } from '@/hooks/use-auth';
+import { redeemCode } from '@/ai/flows/redeem-code';
+import { useToast } from '@/hooks/use-toast';
+import { addTransaction } from '@/lib/data';
 
 type WalletHistoryProps = {
   transactions: Transaction[];
   onWalletAction: (type: 'credit' | 'debit', amount: number, upiId?: string, screenshot?: File) => void;
+  onNewTransaction: () => void;
 };
 
-export default function WalletHistory({ transactions, onWalletAction }: WalletHistoryProps) {
+export default function WalletHistory({ transactions, onWalletAction, onNewTransaction }: WalletHistoryProps) {
   const { user } = useAuth();
   const isAdmin = user?.email === 'rajshukla381@gmail.com';
+  const { toast } = useToast();
 
   const currentBalance = transactions.reduce((acc, t) => {
     return t.type === 'credit' ? acc + t.amount : acc - t.amount;
   }, 0);
+
+  const handleRedeemCode = async (code: string) => {
+    if (!user) return false;
+
+    const result = await redeemCode({ code, userId: user.email });
+
+    if (result.success) {
+      await addTransaction({
+        userId: user.email,
+        date: new Date().toISOString(),
+        description: `Redeemed Code: ${code}`,
+        amount: result.amount || 0,
+        type: 'credit',
+      });
+      toast({
+        title: 'Code Redeemed!',
+        description: `You received ${result.amount} coins!`,
+      });
+      onNewTransaction();
+      return true;
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Code',
+        description: result.message || 'The entered code is not valid.',
+      });
+      return false;
+    }
+  };
+
 
   return (
     <Card className="h-full flex flex-col">
@@ -51,12 +86,14 @@ export default function WalletHistory({ transactions, onWalletAction }: WalletHi
           <WalletActionDialog
             action="credit"
             onConfirm={(amount, _, screenshot) => onWalletAction('credit', amount, undefined, screenshot)}
+            onRedeemCode={handleRedeemCode}
           >
             <Button>Get Coins</Button>
           </WalletActionDialog>
           <WalletActionDialog
             action="debit"
             onConfirm={(amount, upiId) => onWalletAction('debit', amount, upiId)}
+            onRedeemCode={handleRedeemCode}
           >
             <Button variant="outline">Redeem</Button>
           </WalletActionDialog>

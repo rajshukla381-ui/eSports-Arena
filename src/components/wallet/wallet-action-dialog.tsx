@@ -17,19 +17,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, Upload, CircleDollarSign } from 'lucide-react';
+import { Copy, Upload, CircleDollarSign, Gift } from 'lucide-react';
 import { coinPackages } from '@/lib/coin-packages.json';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { redeemCode } from '@/ai/flows/redeem-code';
 
 type WalletActionDialogProps = {
   action: 'credit' | 'debit';
   onConfirm: (amount: number, upiId?: string, screenshot?: File) => void;
+  onRedeemCode: (code: string) => Promise<boolean>;
   children: React.ReactNode;
 };
 
 export function WalletActionDialog({
   action,
   onConfirm,
+  onRedeemCode,
   children,
 }: WalletActionDialogProps) {
   const [open, setOpen] = useState(false);
@@ -38,6 +42,8 @@ export function WalletActionDialog({
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [screenshotName, setScreenshotName] = useState('');
   const [selectedPackage, setSelectedPackage] = useState<(typeof coinPackages[0]) | null>(null);
+  const [redeemCodeInput, setRedeemCodeInput] = useState('');
+  const [isRedeeming, setIsRedeeming] = useState(false);
 
 
   const { toast } = useToast();
@@ -84,6 +90,7 @@ export function WalletActionDialog({
     setScreenshot(null);
     setScreenshotName('');
     setSelectedPackage(null);
+    setRedeemCodeInput('');
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,68 +106,118 @@ export function WalletActionDialog({
     toast({ title: 'Copied!', description: 'UPI ID copied to clipboard.' });
   }
 
+  const handleRedeemCode = async () => {
+    if (!redeemCodeInput) {
+        toast({ variant: 'destructive', title: 'Code Required', description: 'Please enter a redeem code.' });
+        return;
+    }
+    setIsRedeeming(true);
+    const success = await onRedeemCode(redeemCodeInput);
+    setIsRedeeming(false);
+    if (success) {
+      setOpen(false);
+      resetState();
+    }
+  }
+
+
   const creditContent = (
     <>
-      <DialogHeader>
-        <DialogTitle>Get Gaming Coins</DialogTitle>
-        <DialogDescription>
-          Select a coin package, send your payment to the UPI ID below, then upload a screenshot to complete your request.
-        </DialogDescription>
-      </DialogHeader>
-      
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-4 max-h-[300px] overflow-y-auto pr-2">
-        {coinPackages.map(pkg => (
-            <div key={pkg.id} 
-                 className={cn(
-                    "relative border-2 rounded-lg p-3 text-center cursor-pointer transition-all bg-card hover:border-primary/80",
-                    selectedPackage?.id === pkg.id ? 'border-primary shadow-glow-primary' : 'border-transparent'
-                 )}
-                 onClick={() => setSelectedPackage(pkg)}>
-                <Image src={pkg.imageUrl} alt={`${pkg.amount} coins`} width={100} height={100} className="mx-auto mb-2" data-ai-hint={pkg.imageHint} />
-                <div>
-                  <div className="font-bold flex items-center justify-center gap-1 text-lg">
-                      <CircleDollarSign className="w-5 h-5 text-primary" /> {pkg.amount.toLocaleString()}
-                  </div>
-                  <div className="text-sm text-muted-foreground">₹{pkg.price.toLocaleString()}</div>
+        <DialogHeader>
+            <DialogTitle>Get Gaming Coins</DialogTitle>
+            <DialogDescription>
+            Choose how you want to add coins to your wallet.
+            </DialogDescription>
+        </DialogHeader>
+        <Tabs defaultValue="buy" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="buy"><CircleDollarSign/>Buy Coins</TabsTrigger>
+                <TabsTrigger value="redeem"><Gift/>Redeem Code</TabsTrigger>
+            </TabsList>
+            <TabsContent value="buy">
+                <div className="py-4 space-y-4">
+                    <p className="text-sm text-muted-foreground px-1">
+                        Select a coin package, send your payment to the UPI ID below, then upload a screenshot to complete your request.
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[300px] overflow-y-auto pr-2">
+                        {coinPackages.map(pkg => (
+                            <div key={pkg.id} 
+                                className={cn(
+                                    "relative border-2 rounded-lg p-3 text-center cursor-pointer transition-all bg-card hover:border-primary/80",
+                                    selectedPackage?.id === pkg.id ? 'border-primary shadow-glow-primary' : 'border-transparent'
+                                )}
+                                onClick={() => setSelectedPackage(pkg)}>
+                                <Image src={pkg.imageUrl} alt={`${pkg.amount} coins`} width={100} height={100} className="mx-auto mb-2" data-ai-hint={pkg.imageHint} />
+                                <div>
+                                <div className="font-bold flex items-center justify-center gap-1 text-lg">
+                                    <CircleDollarSign className="w-5 h-5 text-primary" /> {pkg.amount.toLocaleString()}
+                                </div>
+                                <div className="text-sm text-muted-foreground">₹{pkg.price.toLocaleString()}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    {selectedPackage && (
+                        <div className="space-y-4 animate-in fade-in-0">
+                            <div className="bg-muted/50 p-4 rounded-md text-center space-y-2">
+                                <Label>Pay ₹{selectedPackage.price.toLocaleString()} to this UPI ID</Label>
+                                <div className="flex items-center justify-center gap-2 p-2 bg-background rounded-md">
+                                    <p className="text-lg font-mono">{adminUpiId}</p>
+                                    <Button variant="ghost" size="icon" onClick={copyToClipboard}>
+                                        <Copy className="h-4 w-4"/>
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="screenshot" className="text-right">
+                                    Screenshot
+                                </Label>
+                                <div className="col-span-3">
+                                    <Button asChild variant="outline" className="w-full justify-start font-normal">
+                                    <Label htmlFor="screenshot-file" className="w-full flex items-center gap-2 cursor-pointer">
+                                        <Upload className="w-4 h-4" />
+                                        <span>{screenshotName || 'Upload payment proof'}</span>
+                                    </Label>
+                                    </Button>
+                                    <Input id="screenshot-file" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
-            </div>
-        ))}
-      </div>
-      
-      {selectedPackage && (
-        <div className="space-y-4 animate-in fade-in-0">
-             <div className="bg-muted/50 p-4 rounded-md text-center space-y-2">
-                <Label>Pay ₹{selectedPackage.price.toLocaleString()} to this UPI ID</Label>
-                <div className="flex items-center justify-center gap-2 p-2 bg-background rounded-md">
-                    <p className="text-lg font-mono">{adminUpiId}</p>
-                    <Button variant="ghost" size="icon" onClick={copyToClipboard}>
-                        <Copy className="h-4 w-4"/>
+                <DialogFooter>
+                    <DialogClose asChild>
+                    <Button variant="outline" onClick={resetState}>Cancel</Button>
+                    </DialogClose>
+                    <Button onClick={handleConfirm} disabled={!selectedPackage || !screenshot}>Send Request</Button>
+                </DialogFooter>
+            </TabsContent>
+            <TabsContent value="redeem">
+                 <div className="space-y-4 py-4">
+                    <p className="text-sm text-muted-foreground px-1">
+                        Enter a valid redeem code to receive your reward instantly.
+                    </p>
+                    <div className="space-y-2">
+                        <Label htmlFor="redeem-code">Redeem Code</Label>
+                        <Input
+                            id="redeem-code"
+                            value={redeemCodeInput}
+                            onChange={(e) => setRedeemCodeInput(e.target.value)}
+                            placeholder="Enter your code"
+                        />
+                    </div>
+                </div>
+                 <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline" onClick={resetState}>Cancel</Button>
+                    </DialogClose>
+                    <Button onClick={handleRedeemCode} disabled={isRedeeming}>
+                        {isRedeeming ? 'Redeeming...' : 'Redeem Now'}
                     </Button>
-                </div>
-             </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="screenshot" className="text-right">
-                    Screenshot
-                </Label>
-                <div className="col-span-3">
-                    <Button asChild variant="outline" className="w-full justify-start font-normal">
-                    <Label htmlFor="screenshot-file" className="w-full flex items-center gap-2 cursor-pointer">
-                        <Upload className="w-4 h-4" />
-                        <span>{screenshotName || 'Upload payment proof'}</span>
-                    </Label>
-                    </Button>
-                    <Input id="screenshot-file" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-                </div>
-            </div>
-        </div>
-      )}
-
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button variant="outline" onClick={resetState}>Cancel</Button>
-        </DialogClose>
-        <Button onClick={handleConfirm} disabled={!selectedPackage || !screenshot}>Send Request</Button>
-      </DialogFooter>
+                </DialogFooter>
+            </TabsContent>
+        </Tabs>
     </>
   );
 

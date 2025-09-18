@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Header } from '@/components/layout/header';
 import TournamentDetails from '@/components/tournaments/tournament-details';
 import TournamentList from '@/components/tournaments/tournament-list';
@@ -29,19 +29,19 @@ export default function Home() {
     }
   }, [user, authLoading, router]);
 
-  const fetchAndSetData = () => {
-    Promise.all([getTournaments(), getTransactions(user?.email)]).then(([tournaments, userTransactions]) => {
-      setTournaments(tournaments);
-      setTransactions(userTransactions);
-      setLoading(false);
-    });
-  }
-
-  useEffect(() => {
+  const fetchAndSetData = useCallback(() => {
     if(user) {
-      fetchAndSetData();
+      Promise.all([getTournaments(), getTransactions(user.email)]).then(([tournaments, userTransactions]) => {
+        setTournaments(tournaments);
+        setTransactions(userTransactions);
+        setLoading(false);
+      });
     }
   }, [user]);
+
+  useEffect(() => {
+    fetchAndSetData();
+  }, [fetchAndSetData]);
 
   const searchParams = useSearchParams();
   const tournamentId = searchParams.get('tournamentId');
@@ -197,6 +197,7 @@ export default function Home() {
             <WalletHistory
               transactions={transactions}
               onWalletAction={handleWalletAction}
+              onNewTransaction={fetchAndSetData}
               key={transactions.length} // Force re-render on transaction change
             />
           </aside>
