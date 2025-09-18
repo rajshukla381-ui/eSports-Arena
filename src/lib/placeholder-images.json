@@ -60,6 +60,24 @@
       "description": "Mega coin pack",
       "imageUrl": "https://picsum.photos/seed/coin-pack-6/100/100",
       "imageHint": "filled vault"
+    },
+    {
+      "id": "coin-pack-7",
+      "description": "100 coin pack",
+      "imageUrl": "https://picsum.photos/seed/coin-pack-7/100/100",
+      "imageHint": "few coins"
+    },
+    {
+      "id": "coin-pack-8",
+      "description": "300 coin pack",
+      "imageUrl": "https://picsum.photos/seed/coin-pack-8/100/100",
+      "imageHint": "small pile coins"
+    },
+    {
+      "id": "coin-pack-9",
+      "description": "500 coin pack",
+      "imageUrl": "https://picsum.photos/seed/coin-pack-9/100/100",
+      "imageHint": "handful coins"
     }
   ]
 }

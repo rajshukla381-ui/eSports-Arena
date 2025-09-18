@@ -2,6 +2,27 @@
 {
     "coinPackages": [
         {
+            "id": "pkg-7",
+            "amount": 100,
+            "price": 10,
+            "imageUrl": "https://picsum.photos/seed/coin-pack-7/100/100",
+            "imageHint": "few coins"
+        },
+        {
+            "id": "pkg-8",
+            "amount": 300,
+            "price": 25,
+            "imageUrl": "https://picsum.photos/seed/coin-pack-8/100/100",
+            "imageHint": "small pile coins"
+        },
+        {
+            "id": "pkg-9",
+            "amount": 500,
+            "price": 45,
+            "imageUrl": "https://picsum.photos/seed/coin-pack-9/100/100",
+            "imageHint": "handful coins"
+        },
+        {
             "id": "pkg-1",
             "amount": 1000,
             "price": 100,
