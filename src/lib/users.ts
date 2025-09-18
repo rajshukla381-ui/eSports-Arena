@@ -25,7 +25,13 @@ export const getUser = async (userId: string): Promise<UserProfile | undefined> 
 
 export const createUser = async (userId: string, role: 'guest' | 'admin'): Promise<UserProfile> => {
     const existingUser = await getUser(userId);
-    if (existingUser) return existingUser;
+    if (existingUser) {
+      // If user exists, just update their role if trying to create an admin
+      if (role === 'admin' && existingUser.role !== 'admin') {
+        existingUser.role = 'admin';
+      }
+      return existingUser;
+    }
     
     const newUser: UserProfile = { email: userId, role, isBlocked: false };
     usersData.push(newUser);
