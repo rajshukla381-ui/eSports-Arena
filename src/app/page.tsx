@@ -122,6 +122,30 @@ export default function Home() {
     }
   };
 
+  const handleDeclareWinner = (tournament: Tournament, winnerEmail: string, prizeAmount: number) => {
+    // In a real app, you'd find the user and add to their transactions.
+    // For this simulation, we'll just show a toast.
+    // If we were tracking all users' transactions, we would do something like:
+    // const winnerTransactions = getTransactionsForUser(winnerEmail);
+    // setTransactionsForUser(winnerEmail, [...winnerTransactions, newCreditTransaction]);
+
+    toast({
+      title: 'Winner Declared!',
+      description: `${winnerEmail} has been awarded ${prizeAmount.toLocaleString()} coins for winning ${tournament.title}.`,
+    });
+
+    if (user?.email === winnerEmail) {
+        const newTransaction: Transaction = {
+            id: `t-win-${transactions.length + 1}`,
+            date: new Date().toISOString(),
+            description: `Prize for ${tournament.title}`,
+            amount: prizeAmount,
+            type: 'credit',
+        };
+        setTransactions([newTransaction, ...transactions]);
+    }
+  };
+
   if (loading || authLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -165,6 +189,8 @@ export default function Home() {
               <TournamentDetails
                 tournament={selectedTournament}
                 onJoin={handleJoinTournament}
+                isAdmin={isAdmin}
+                onDeclareWinner={handleDeclareWinner}
               />
             ) : (
               <div className="flex items-center justify-center h-full rounded-lg bg-card border">
