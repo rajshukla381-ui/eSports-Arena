@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CircleDollarSign, Users, Gamepad2, Shield, Lock, Eye, EyeOff, Clipboard, Trophy, Image as ImageIcon, Send, Trash2 } from 'lucide-react';
+import { CircleDollarSign, Users, Gamepad2, Shield, Lock, Eye, EyeOff, Clipboard, Trophy, Image as ImageIcon, Send, Trash2, Mic } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { addChatMessage, getChatMessages } from '@/lib/chat';
@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow, format } from 'date-fns';
 import { addNotification } from '@/lib/notifications';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
+import { generateVoiceMessage } from '@/ai/flows/generate-voice-message';
 
 export default function TournamentPage({ params }: { params: { tournamentId: string } }) {
   const { tournamentId } = params;
@@ -300,6 +301,7 @@ function ParticipantsList({ participants }: { participants: TournamentParticipan
 function TournamentChat({ tournamentId, currentUserEmail }: { tournamentId: string, currentUserEmail: string }) {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [newMessage, setNewMessage] = useState('');
+    const [isSending, setIsSending] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
@@ -322,12 +324,21 @@ function TournamentChat({ tournamentId, currentUserEmail }: { tournamentId: stri
         }
     }, [messages]);
 
-    const handleSendMessage = async (e: React.FormEvent, imageUrl?: string) => {
+    const handleSendMessage = async (e: React.FormEvent, imageUrl?: string, voiceUrl?: string) => {
         e.preventDefault();
-        if (newMessage.trim() || imageUrl) {
-            await addChatMessage(tournamentId, currentUserEmail, newMessage, imageUrl);
-            setNewMessage('');
-            fetchMessages(); // Immediately fetch new messages after sending
+        if (isSending) return;
+
+        if (newMessage.trim() || imageUrl || voiceUrl) {
+            setIsSending(true);
+            try {
+                await addChatMessage(tournamentId, currentUserEmail, newMessage, imageUrl, voiceUrl);
+                setNewMessage('');
+                fetchMessages(); // Immediately fetch new messages after sending
+            } catch (error) {
+                 toast({ variant: 'destructive', title: 'Error Sending Message', description: 'Could not send the message. Please try again.' });
+            } finally {
+                setIsSending(false);
+            }
         }
     }
     
@@ -343,6 +354,23 @@ function TournamentChat({ tournamentId, currentUserEmail }: { tournamentId: stri
                 handleSendMessage(e, reader.result as string);
             };
             reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSendVoiceMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newMessage.trim() || isSending) return;
+
+        setIsSending(true);
+        toast({ title: 'Generating voice message...', description: 'Please wait a moment.' });
+        try {
+            const voiceUrl = await generateVoiceMessage(newMessage);
+            await handleSendMessage(e, undefined, voiceUrl);
+        } catch (error) {
+            console.error('Error generating voice message:', error);
+            toast({ variant: 'destructive', title: 'Voice Message Failed', description: 'Could not generate the voice message.' });
+        } finally {
+            setIsSending(false);
         }
     };
 
@@ -366,7 +394,13 @@ function TournamentChat({ tournamentId, currentUserEmail }: { tournamentId: stri
                                         msg.userId === currentUserEmail ? "bg-primary text-primary-foreground" : "bg-muted"
                                     )}>
                                         <p className="text-xs font-bold mb-1 truncate max-w-[100px]">{msg.userId.split('@')[0]}</p>
-                                        {msg.message && <p className="text-sm whitespace-pre-wrap">{msg.message}</p>}
+                                        
+                                        {msg.voiceUrl ? (
+                                            <audio controls src={msg.voiceUrl} className="w-full h-10" />
+                                        ) : msg.message ? (
+                                            <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                                        ) : null}
+
                                         {msg.imageUrl && (
                                             <Image src={msg.imageUrl} alt="Chat image" width={200} height={200} className="rounded-md mt-2" />
                                         )}
@@ -381,7 +415,7 @@ function TournamentChat({ tournamentId, currentUserEmail }: { tournamentId: stri
                             )}
                         </div>
                     </ScrollArea>
-                    <form onSubmit={handleSendMessage} className="mt-4 flex gap-2">
+                    <form className="mt-4 flex gap-2" onSubmit={(e) => handleSendMessage(e)}>
                         <Input
                             id="image-upload"
                             type="file"
@@ -390,15 +424,19 @@ function TournamentChat({ tournamentId, currentUserEmail }: { tournamentId: stri
                             onChange={handleImageUpload}
                             className="hidden"
                         />
-                         <Button type="button" size="icon" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                         <Button type="button" size="icon" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isSending}>
                             <ImageIcon className="w-4 h-4"/>
                         </Button>
                         <Input 
                             value={newMessage} 
                             onChange={e => setNewMessage(e.target.value)} 
                             placeholder="Type a message..."
+                            disabled={isSending}
                         />
-                        <Button type="submit" size="icon"><Send className="w-4 h-4"/></Button>
+                         <Button type="button" size="icon" onClick={handleSendVoiceMessage} disabled={isSending || !newMessage.trim()}>
+                            <Mic className="w-4 h-4"/>
+                        </Button>
+                        <Button type="submit" size="icon" disabled={isSending}><Send className="w-4 h-4"/></Button>
                     </form>
                 </div>
             </CardContent>

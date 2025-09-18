@@ -13,13 +13,14 @@ export const getChatMessages = async (tournamentId: string): Promise<ChatMessage
   }, 50));
 };
 
-export const addChatMessage = async (tournamentId: string, userId: string, message: string, imageUrl?: string): Promise<ChatMessage> => {
+export const addChatMessage = async (tournamentId: string, userId: string, message: string, imageUrl?: string, voiceUrl?: string): Promise<ChatMessage> => {
     const newChatMessage: ChatMessage = {
         id: `msg-${Date.now()}`,
         tournamentId,
         userId,
         message,
         imageUrl,
+        voiceUrl,
         timestamp: new Date().toISOString(),
     };
     chatMessagesData.push(newChatMessage);

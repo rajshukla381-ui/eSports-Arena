@@ -86,5 +86,6 @@ export type ChatMessage = {
     message: string;
     timestamp: string;
     imageUrl?: string;
+    voiceUrl?: string;
 };
     
