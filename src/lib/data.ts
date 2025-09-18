@@ -82,11 +82,12 @@ export const addTournament = async (tournament: Omit<Tournament, 'id'>): Promise
 
 export const getTransactions = async (userId?: string): Promise<Transaction[]> => {
   return new Promise(resolve => setTimeout(() => {
-    if (!userId) {
-        return resolve([]);
+    if (userId) {
+        const userTransactions = transactionsData.filter(t => t.userId === userId);
+        return resolve(userTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     }
-    const userTransactions = transactionsData.filter(t => t.userId === userId);
-    return resolve(userTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    // If no userId, return all transactions
+    return resolve(transactionsData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
   }, 50));
 };
 

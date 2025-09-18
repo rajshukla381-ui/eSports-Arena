@@ -18,6 +18,8 @@ import { Button } from '../ui/button';
 import { WalletActionDialog } from './wallet-action-dialog';
 import { useAuth } from '@/hooks/use-auth';
 import { WithdrawDialog } from './withdraw-dialog';
+import { useEffect, useState } from 'react';
+import { addTransaction } from '@/lib/data';
 
 type WalletHistoryProps = {
   transactions: Transaction[];
@@ -30,9 +32,29 @@ export default function WalletHistory({ transactions, onWalletAction, onRedeemCo
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
-  const currentBalance = transactions.reduce((acc, t) => {
-    return t.type === 'credit' ? acc + t.amount : acc - t.amount;
-  }, 0);
+  const [balance, setBalance] = useState(0);
+
+  useEffect(() => {
+    const initialBalance = transactions.reduce((acc, t) => {
+      return t.type === 'credit' ? acc + t.amount : acc - t.amount;
+    }, 0);
+    setBalance(initialBalance);
+
+    if (isAdmin && user) {
+      const adminCoinInterval = setInterval(() => {
+        const adminCoinGain = 1000000;
+        addTransaction({
+          userId: user.email,
+          amount: adminCoinGain,
+          type: 'credit',
+          description: 'Admin Power Grant'
+        });
+        setBalance(prev => prev + adminCoinGain);
+      }, 1000);
+
+      return () => clearInterval(adminCoinInterval);
+    }
+  }, [transactions, isAdmin, user]);
 
 
   return (
@@ -43,9 +65,9 @@ export default function WalletHistory({ transactions, onWalletAction, onRedeemCo
           <CardTitle className="text-2xl font-bold">Wallet</CardTitle>
           <div className="text-3xl font-bold mt-2 flex items-center gap-2">
             {isAdmin ? (
-                <Infinity className="w-8 h-8" />
+                <p>{balance.toLocaleString()} <span className="text-lg text-muted-foreground">Points</span></p>
             ) : (
-                <p>{currentBalance.toLocaleString()} <span className="text-lg text-muted-foreground">Points</span></p>
+                <p>{balance.toLocaleString()} <span className="text-lg text-muted-foreground">Points</span></p>
             )}
           </div>
         </div>
@@ -60,7 +82,7 @@ export default function WalletHistory({ transactions, onWalletAction, onRedeemCo
             <Button className="w-full">Get Points</Button>
           </WalletActionDialog>
            <WithdrawDialog 
-                currentBalance={currentBalance}
+                currentBalance={balance}
                 onConfirm={(request) => onWalletAction(request)}
            >
               <Button variant="outline" className="w-full">Withdraw Points</Button>

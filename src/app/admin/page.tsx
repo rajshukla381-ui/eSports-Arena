@@ -6,9 +6,9 @@ import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { CoinRequest, Tournament } from '@/lib/types';
+import { CoinRequest, Tournament, Transaction } from '@/lib/types';
 import { getCoinRequests, updateCoinRequestStatus } from '@/lib/requests';
-import { addTransaction, addTournament } from '@/lib/data';
+import { addTransaction, addTournament, getTransactions } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ArrowUpRight, Check, XIcon, Copy, Gift, CircleDollarSign, Trophy, ArrowDownLeft } from 'lucide-react';
@@ -35,18 +35,27 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 export default function AdminPage() {
     const [requests, setRequests] = useState<CoinRequest[]>([]);
+    const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
     const { toast } = useToast();
 
     useEffect(() => {
-        const fetchRequests = async () => {
+        const fetchData = async () => {
             const pendingRequests = await getCoinRequests();
             setRequests(pendingRequests.filter(r => r.status === 'pending'));
+            
+            const transactions = await getTransactions();
+            setAllTransactions(transactions);
         };
-        fetchRequests();
+        
+        fetchData();
+        const interval = setInterval(fetchData, 3000); // Refresh data every 3 seconds
+        return () => clearInterval(interval);
     }, []);
 
     const handleRequest = async (request: CoinRequest, newStatus: 'approved' | 'rejected', sentRedeemCode?: string) => {
@@ -160,89 +169,127 @@ export default function AdminPage() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <Header />
       <main className="flex-1 p-4 sm:p-6 lg:p-8 flex flex-col items-center">
-        <div className="w-full max-w-6xl space-y-8">
+        <div className="w-full max-w-7xl space-y-8">
             <div className="text-center">
                 <h1 className="text-4xl font-bold text-glow-primary">Admin Panel</h1>
                 <p className="text-muted-foreground">Manage your eSports Arena</p>
             </div>
             
-            <Card>
-                <CardHeader>
-                    <CardTitle>Pending Requests</CardTitle>
-                    <CardDescription>Approve or reject point and tournament creation requests from users.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                        <TableRow>
-                            <TableHead>User</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Amount</TableHead>
-                            <TableHead>Details</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                        {requests.length > 0 ? requests.map(request => (
-                            <TableRow key={request.id}>
-                                <TableCell>{request.userId}</TableCell>
-                                <TableCell>
-                                    {renderTypeBadge(request)}
-                                </TableCell>
-                                <TableCell>
-                                     <div className="flex flex-col">
-                                        <span className="font-bold flex items-center gap-1">
-                                            <CircleDollarSign className="w-4 h-4" />{request.amount.toLocaleString()}
-                                        </span>
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-xs max-w-[200px] truncate">
-                                    {request.type === 'credit' && request.screenshot && `Screenshot: ${request.screenshot}`}
-                                    {request.redeemCode && (
-                                        <div className="flex items-center gap-2">
-                                            <span>Code: <span className="font-mono">{request.redeemCode}</span></span>
-                                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copyToClipboard(request.redeemCode!, 'Redeem code')}>
-                                                <Copy className="w-3 h-3" />
-                                            </Button>
-                                        </div>
-                                    )}
-                                    {request.type === 'tournament_creation' && request.tournamentDetails && (
-                                        <span>{request.tournamentDetails.title}</span>
-                                    )}
-                                    {request.type === 'debit' && request.details?.redeemOption === 'upi' && `UPI: ${request.details.upiId}`}
-                                    {request.type === 'debit' && request.details?.redeemOption === 'google_play' && `GPlay: ${request.details.googlePlayPackage?.name}`}
-                                </TableCell>
-                                <TableCell>{format(new Date(request.date), 'PPp')}</TableCell>
-                                <TableCell className="text-right space-x-2">
-                                     {request.type === 'debit' && request.details?.redeemOption === 'google_play' ? (
-                                        <SendCodeDialog request={request} onConfirm={handleRequest} />
-                                    ) : (
-                                        <Button 
-                                            size="icon" 
-                                            variant="ghost" 
-                                            className="text-green-500" 
-                                            onClick={() => handleRequest(request, 'approved')}>
-                                            <Check className="w-5 h-5" />
-                                        </Button>
-                                    )}
-                                    <Button size="icon" variant="ghost" className="text-red-500" onClick={() => handleRequest(request, 'rejected')}>
-                                        <XIcon className="w-5 h-5" />
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        )) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle>Pending Requests</CardTitle>
+                        <CardDescription>Approve or reject point and tournament creation requests from users.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                                    No pending requests.
-                                </TableCell>
+                                <TableHead>User</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Amount</TableHead>
+                                <TableHead>Details</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
-                        )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                            </TableHeader>
+                            <TableBody>
+                            {requests.length > 0 ? requests.map(request => (
+                                <TableRow key={request.id}>
+                                    <TableCell className="max-w-[150px] truncate">{request.userId}</TableCell>
+                                    <TableCell>
+                                        {renderTypeBadge(request)}
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col">
+                                            <span className="font-bold flex items-center gap-1">
+                                                <CircleDollarSign className="w-4 h-4" />{request.amount.toLocaleString()}
+                                            </span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-xs max-w-[200px] truncate">
+                                        {request.type === 'credit' && request.screenshot && `Screenshot: ${request.screenshot}`}
+                                        {request.redeemCode && (
+                                            <div className="flex items-center gap-2">
+                                                <span>Code: <span className="font-mono">{request.redeemCode}</span></span>
+                                                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copyToClipboard(request.redeemCode!, 'Redeem code')}>
+                                                    <Copy className="w-3 h-3" />
+                                                </Button>
+                                            </div>
+                                        )}
+                                        {request.type === 'tournament_creation' && request.tournamentDetails && (
+                                            <span>{request.tournamentDetails.title}</span>
+                                        )}
+                                        {request.type === 'debit' && request.details?.redeemOption === 'upi' && `UPI: ${request.details.upiId}`}
+                                        {request.type === 'debit' && request.details?.redeemOption === 'google_play' && `GPlay: ${request.details.googlePlayPackage?.name}`}
+                                    </TableCell>
+                                    <TableCell>{format(new Date(request.date), 'PPp')}</TableCell>
+                                    <TableCell className="text-right space-x-2">
+                                        {request.type === 'debit' && request.details?.redeemOption === 'google_play' ? (
+                                            <SendCodeDialog request={request} onConfirm={handleRequest} />
+                                        ) : (
+                                            <Button 
+                                                size="icon" 
+                                                variant="ghost" 
+                                                className="text-green-500" 
+                                                onClick={() => handleRequest(request, 'approved')}>
+                                                <Check className="w-5 h-5" />
+                                            </Button>
+                                        )}
+                                        <Button size="icon" variant="ghost" className="text-red-500" onClick={() => handleRequest(request, 'rejected')}>
+                                            <XIcon className="w-5 h-5" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            )) : (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                                        No pending requests.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
 
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle>All Transactions</CardTitle>
+                        <CardDescription>A log of all transactions happening on the platform.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ScrollArea className="h-[400px]">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>User</TableHead>
+                                        <TableHead>Description</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead className="text-right">Amount</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {allTransactions.map(tx => (
+                                        <TableRow key={tx.id}>
+                                            <TableCell className="max-w-[150px] truncate">{tx.userId}</TableCell>
+                                            <TableCell>{tx.description}</TableCell>
+                                            <TableCell>{format(new Date(tx.date), 'Pp')}</TableCell>
+                                            <TableCell className={cn(
+                                                'text-right font-semibold flex items-center justify-end gap-1',
+                                                tx.type === 'credit' ? 'text-accent' : 'text-destructive'
+                                            )}>
+                                                {tx.type === 'credit' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownLeft className="w-4 h-4" />}
+                                                {tx.amount.toLocaleString()}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </ScrollArea>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
       </main>
     </div>
