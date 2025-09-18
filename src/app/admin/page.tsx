@@ -21,7 +21,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { placeholderImages } from '@/lib/placeholder-images.json';
 import {
   Dialog,
   DialogContent,
@@ -32,7 +31,6 @@ import {
   DialogClose,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -72,33 +70,11 @@ export default function AdminPage() {
         
         if (newStatus === 'approved') {
             if (request.type === 'tournament_creation') {
-                 const ffBanner = placeholderImages.find(p => p.id === 'game-ff');
-                const bgmiBanner = placeholderImages.find(p => p.id === 'game-bgmi');
-                const valorantBanner = placeholderImages.find(p => p.id === 'game-valorant');
-                let imageUrl = '';
-                let imageHint = '';
-
-                switch (request.tournamentDetails!.gameName) {
-                    case 'Free Fire':
-                        imageUrl = ffBanner?.imageUrl || '';
-                        imageHint = ffBanner?.imageHint || '';
-                        break;
-                    case 'BGMI':
-                        imageUrl = bgmiBanner?.imageUrl || '';
-                        imageHint = bgmiBanner?.imageHint || '';
-                        break;
-                    case 'Valorant':
-                        imageUrl = valorantBanner?.imageUrl || '';
-                        imageHint = valorantBanner?.imageHint || '';
-                        break;
-                }
-
                 const newTournament: Omit<Tournament, 'id'> = {
                     ...request.tournamentDetails!,
                     creatorId: request.userId,
                     status: 'Upcoming',
-                    imageUrl,
-                    imageHint
+                    imageHint: 'custom tournament banner'
                 };
                 await addTournament(newTournament);
                 
@@ -477,5 +453,3 @@ function DeleteTournamentDialog({ tournament, onDelete }: { tournament: Tourname
         </AlertDialog>
     );
 }
-
-    

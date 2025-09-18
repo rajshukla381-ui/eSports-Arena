@@ -20,8 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from 'next/link';
-import { Copy, CircleDollarSign } from 'lucide-react';
+import { Copy, CircleDollarSign, Upload, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
+import Image from 'next/image';
 
 const TOURNAMENT_CREATION_FEE_PERCENTAGE = 0.20;
 
@@ -35,6 +36,7 @@ export default function ProfilePage() {
   const [rules, setRules] = useState('');
   const [matchTime, setMatchTime] = useState('');
   const [balance, setBalance] = useState(0);
+  const [bannerImage, setBannerImage] = useState<string | null>(null);
 
   useEffect(() => {
     // Set initial match time only on the client to avoid hydration mismatch
@@ -53,6 +55,17 @@ export default function ProfilePage() {
 
   }, [user]);
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBannerImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -65,6 +78,15 @@ export default function ProfilePage() {
         description: 'Please fill out all fields and enter a valid prize pool amount.',
       });
       return;
+    }
+
+    if (!bannerImage) {
+        toast({
+            variant: 'destructive',
+            title: 'Banner Image Required',
+            description: 'Please upload a banner image for your tournament.',
+        });
+        return;
     }
     
     if (!user || !gameName) return;
@@ -81,13 +103,14 @@ export default function ProfilePage() {
         return;
     }
 
-    const tournamentDetails: Omit<Tournament, 'id' | 'status' | 'imageUrl' | 'imageHint' | 'creatorId' | 'entryFee'> = {
+    const tournamentDetails: Omit<Tournament, 'id' | 'status' | 'imageHint' | 'creatorId' | 'entryFee'> = {
       title,
       gameName,
       prizePool: prizePoolNum,
       host,
       rules,
       matchTime: new Date(matchTime).toISOString(),
+      imageUrl: bannerImage,
     };
 
     await addCoinRequest({
@@ -111,6 +134,7 @@ export default function ProfilePage() {
     setPrizePool('');
     setHost('');
     setRules('');
+    setBannerImage(null);
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     setMatchTime(now.toISOString().slice(0, 16));
@@ -136,6 +160,28 @@ export default function ProfilePage() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-2">
+                        <Label>Tournament Banner</Label>
+                        <div className="flex items-center gap-4">
+                            <div className="w-48 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
+                                {bannerImage ? (
+                                    <Image src={bannerImage} alt="Banner Preview" width={192} height={96} className="object-cover rounded-md w-full h-full" />
+                                ) : (
+                                    <div className="text-center text-muted-foreground">
+                                        <ImageIcon className="mx-auto" />
+                                        <p className="text-xs">Preview</p>
+                                    </div>
+                                )}
+                            </div>
+                            <Button asChild variant="outline" className="flex-1">
+                                <Label htmlFor="banner-upload" className="cursor-pointer">
+                                    <Upload className="mr-2" />
+                                    Upload Image
+                                </Label>
+                            </Button>
+                            <Input id="banner-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                        </div>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <Label htmlFor="title">Tournament Title</Label>
@@ -215,5 +261,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
