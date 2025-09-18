@@ -37,7 +37,10 @@ const PLATFORM_FEE_RATE = 0.10;
 const COIN_TO_INR_RATE = 0.1; // 10 coins = 1 INR
 
 const googlePlayPackages = [
-    { id: 'gp-10', name: '₹10 Google Play Code', coinCost: 170, value: 10 }
+    { id: 'gp-10', name: '₹10 Google Play Code', coinCost: 170, value: 10 },
+    { id: 'gp-25', name: '₹25 Google Play Code', coinCost: 425, value: 25 },
+    { id: 'gp-50', name: '₹50 Google Play Code', coinCost: 850, value: 50 },
+    { id: 'gp-100', name: '₹100 Google Play Code', coinCost: 1700, value: 100 },
 ];
 
 export function WalletActionDialog({
