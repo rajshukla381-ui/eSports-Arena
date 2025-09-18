@@ -4,6 +4,7 @@ import { Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/hooks/use-auth';
+import FloatingSpinButton from '@/components/spin-wheel/floating-spin-button';
 
 
 const spaceGrotesk = Space_Grotesk({
@@ -31,6 +32,7 @@ export default function RootLayout({
       <body className={`${spaceGrotesk.variable} font-body antialiased`}>
           <AuthProvider>
             {children}
+            <FloatingSpinButton />
           </AuthProvider>
           <Toaster />
       </body>

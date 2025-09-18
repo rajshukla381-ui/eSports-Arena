@@ -35,12 +35,6 @@ export function Header() {
         <div className="flex flex-1 items-center justify-end gap-4">
           { user && (
             <>
-              <Link href="/spin" passHref>
-                <Button variant="outline" className="gap-2">
-                  <Ticket className="w-5 h-5 text-accent" />
-                  <span className="hidden sm:inline">Spin & Win</span>
-                </Button>
-              </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -78,7 +72,7 @@ export function Header() {
                   <Link href="/profile" passHref>
                     <DropdownMenuItem>
                       <User className="mr-2 h-4 w-4" />
-                      <span>Profile & Create</span>
+                      <span>Profile &amp; Create</span>
                     </DropdownMenuItem>
                   </Link>
                   <DropdownMenuSeparator />
