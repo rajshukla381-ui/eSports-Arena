@@ -5,63 +5,63 @@
             "id": "pkg-7",
             "amount": 100,
             "price": 10,
-            "imageUrl": "https://picsum.photos/seed/coin-pack-7/100/100",
+            "imageUrl": "https://storage.googleapis.com/aifire.dev/Images/21a9757f-278a-4934-8b64-a15d74266453.png",
             "imageHint": "few coins"
         },
         {
             "id": "pkg-8",
             "amount": 300,
             "price": 25,
-            "imageUrl": "https://picsum.photos/seed/coin-pack-8/100/100",
+            "imageUrl": "https://storage.googleapis.com/aifire.dev/Images/46175317-5e63-4702-8685-64d557007e0b.png",
             "imageHint": "small pile coins"
         },
         {
             "id": "pkg-9",
             "amount": 500,
             "price": 45,
-            "imageUrl": "https://picsum.photos/seed/coin-pack-9/100/100",
+            "imageUrl": "https://storage.googleapis.com/aifire.dev/Images/394c8e76-3532-426c-8e89-a0a6538f97e2.png",
             "imageHint": "handful coins"
         },
         {
             "id": "pkg-1",
             "amount": 1000,
             "price": 100,
-            "imageUrl": "https://picsum.photos/seed/coin-pack-1/100/100",
+            "imageUrl": "https://storage.googleapis.com/aifire.dev/Images/b7b9e380-6a7e-49b5-901d-d5a2d1fbe9e3.png",
             "imageHint": "stack coins"
         },
         {
             "id": "pkg-2",
             "amount": 5000,
             "price": 500,
-            "imageUrl": "https://picsum.photos/seed/coin-pack-2/100/100",
+            "imageUrl": "https://storage.googleapis.com/aifire.dev/Images/8991a92e-b6e3-4c91-a548-525e98516d62.png",
             "imageHint": "pile coins"
         },
         {
             "id": "pkg-3",
             "amount": 10000,
             "price": 1000,
-            "imageUrl": "https://picsum.photos/seed/coin-pack-3/100/100",
+            "imageUrl": "https://storage.googleapis.com/aifire.dev/Images/9a761e06-963e-4638-a28a-f3b141973041.png",
             "imageHint": "treasure chest"
         },
         {
             "id": "pkg-4",
             "amount": 25000,
             "price": 2500,
-            "imageUrl": "https://picsum.photos/seed/coin-pack-4/100/100",
+            "imageUrl": "https://storage.googleapis.com/aifire.dev/Images/d10a279c-7036-4712-8f19-3870634637f5.png",
             "imageHint": "gold bars"
         },
         {
             "id": "pkg-5",
             "amount": 50000,
             "price": 5000,
-            "imageUrl": "https://picsum.photos/seed/coin-pack-5/100/100",
+            "imageUrl": "https://storage.googleapis.com/aifire.dev/Images/3b67c331-b952-4467-8e6d-5b5c90b6771d.png",
             "imageHint": "diamond pile"
         },
         {
             "id": "pkg-6",
             "amount": 100000,
             "price": 10000,
-            "imageUrl": "https://picsum.photos/seed/coin-pack-6/100/100",
+            "imageUrl": "https://storage.googleapis.com/aifire.dev/Images/e449231f-6a18-4720-94a2-11c76e279a40.png",
             "imageHint": "filled vault"
         }
     ]
