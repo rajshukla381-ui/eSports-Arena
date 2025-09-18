@@ -5,23 +5,23 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { notFound, useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { useAuth } from '@/hooks/use-auth';
-import { getTournamentById, getTournamentParticipants, isUserParticipant, addTournamentParticipant, setTournamentRoomDetails } from '@/lib/data';
-import { Tournament, TournamentParticipant, ChatMessage } from '@/lib/types';
+import { getTournamentById, getTournamentParticipants, isUserParticipant, addTournamentParticipant, setTournamentRoomDetails, declareTournamentWinners, addTransaction } from '@/lib/data';
+import { Tournament, TournamentParticipant, ChatMessage, Winner } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CircleDollarSign, Users, Gamepad2, Shield, Lock, Eye, EyeOff, Clipboard, ClipboardCheck } from 'lucide-react';
+import { CircleDollarSign, Users, Gamepad2, Shield, Lock, Eye, EyeOff, Clipboard, Trophy, Image as ImageIcon, Send, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { addChatMessage, getChatMessages } from '@/lib/chat';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
-import { Send } from 'lucide-react';
+import { formatDistanceToNow, format } from 'date-fns';
 import { addNotification } from '@/lib/notifications';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 
 export default function TournamentPage({ params }: { params: { tournamentId: string } }) {
   const { tournamentId } = params;
@@ -88,6 +88,33 @@ export default function TournamentPage({ params }: { params: { tournamentId: str
     fetchTournamentData(); // Re-fetch to get updated details
   };
 
+  const handleDeclareWinner = async (winners: Winner[]) => {
+    if (!tournament) return;
+
+    await declareTournamentWinners(tournament.id, winners);
+
+    for (const winner of winners) {
+        await addTransaction({
+            userId: winner.email,
+            date: new Date().toISOString(),
+            description: `Prize for ${tournament.title}`,
+            amount: winner.prize,
+            type: 'credit',
+        });
+        await addNotification({
+            userId: winner.email,
+            message: `Congratulations! You won ${winner.prize.toLocaleString()} points for winning the tournament: "${tournament.title}".`,
+        });
+    }
+
+    toast({
+      title: 'Winners Declared!',
+      description: `Prizes have been distributed for ${tournament.title}.`,
+    });
+    
+    fetchTournamentData();
+  };
+
   if (loading || authLoading) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -122,7 +149,7 @@ export default function TournamentPage({ params }: { params: { tournamentId: str
     );
   }
 
-  const canEditRoom = user?.role === 'admin' || user?.email === tournament.creatorId;
+  const canManageTournament = user?.role === 'admin' || user?.email === tournament.creatorId;
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -153,14 +180,7 @@ export default function TournamentPage({ params }: { params: { tournamentId: str
                   <ParticipantsList participants={participants} />
                 </TabsContent>
                 <TabsContent value="results">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Results</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground">Tournament results will be posted here after the match concludes.</p>
-                        </CardContent>
-                    </Card>
+                    <ResultsCard tournament={tournament} />
                 </TabsContent>
               </Tabs>
             </div>
@@ -173,7 +193,8 @@ export default function TournamentPage({ params }: { params: { tournamentId: str
                         <p className="text-4xl font-bold text-accent text-glow-accent">{tournament.prizePool.toLocaleString()} Points</p>
                     </CardContent>
                 </Card>
-                <RoomDetailsCard tournament={tournament} canEdit={canEditRoom} onSetRoomDetails={handleSetRoomDetails}/>
+                <RoomDetailsCard tournament={tournament} canEdit={canManageTournament} onSetRoomDetails={handleSetRoomDetails}/>
+                {canManageTournament && <DeclareWinnerDialog tournament={tournament} onDeclareWinner={handleDeclareWinner} />}
             </div>
           </div>
         </div>
@@ -280,6 +301,8 @@ function TournamentChat({ tournamentId, currentUserEmail }: { tournamentId: stri
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const { toast } = useToast();
 
     const fetchMessages = useCallback(async () => {
         const fetchedMessages = await getChatMessages(tournamentId);
@@ -299,14 +322,30 @@ function TournamentChat({ tournamentId, currentUserEmail }: { tournamentId: stri
         }
     }, [messages]);
 
-    const handleSendMessage = async (e: React.FormEvent) => {
+    const handleSendMessage = async (e: React.FormEvent, imageUrl?: string) => {
         e.preventDefault();
-        if (newMessage.trim()) {
-            await addChatMessage(tournamentId, currentUserEmail, newMessage);
+        if (newMessage.trim() || imageUrl) {
+            await addChatMessage(tournamentId, currentUserEmail, newMessage, imageUrl);
             setNewMessage('');
             fetchMessages(); // Immediately fetch new messages after sending
         }
     }
+    
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                toast({ variant: 'destructive', title: 'Image too large', description: 'Please upload an image smaller than 2MB.'});
+                return;
+            }
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                handleSendMessage(e, reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
 
     return (
         <Card>
@@ -327,7 +366,10 @@ function TournamentChat({ tournamentId, currentUserEmail }: { tournamentId: stri
                                         msg.userId === currentUserEmail ? "bg-primary text-primary-foreground" : "bg-muted"
                                     )}>
                                         <p className="text-xs font-bold mb-1 truncate max-w-[100px]">{msg.userId.split('@')[0]}</p>
-                                        <p className="text-sm">{msg.message}</p>
+                                        {msg.message && <p className="text-sm whitespace-pre-wrap">{msg.message}</p>}
+                                        {msg.imageUrl && (
+                                            <Image src={msg.imageUrl} alt="Chat image" width={200} height={200} className="rounded-md mt-2" />
+                                        )}
                                         <p className="text-xs opacity-70 mt-1 text-right">{formatDistanceToNow(new Date(msg.timestamp), { addSuffix: true })}</p>
                                     </div>
                                 </div>
@@ -340,6 +382,17 @@ function TournamentChat({ tournamentId, currentUserEmail }: { tournamentId: stri
                         </div>
                     </ScrollArea>
                     <form onSubmit={handleSendMessage} className="mt-4 flex gap-2">
+                        <Input
+                            id="image-upload"
+                            type="file"
+                            accept="image/*"
+                            ref={fileInputRef}
+                            onChange={handleImageUpload}
+                            className="hidden"
+                        />
+                         <Button type="button" size="icon" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                            <ImageIcon className="w-4 h-4"/>
+                        </Button>
                         <Input 
                             value={newMessage} 
                             onChange={e => setNewMessage(e.target.value)} 
@@ -347,6 +400,144 @@ function TournamentChat({ tournamentId, currentUserEmail }: { tournamentId: stri
                         />
                         <Button type="submit" size="icon"><Send className="w-4 h-4"/></Button>
                     </form>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function DeclareWinnerDialog({ tournament, onDeclareWinner }: { tournament: Tournament, onDeclareWinner: (winners: Winner[]) => void }) {
+    const [open, setOpen] = useState(false);
+    const [winners, setWinners] = useState<Winner[]>([{ email: '', prize: 0 }]);
+    const { toast } = useToast();
+
+    const handleAddWinner = () => {
+        setWinners([...winners, { email: '', prize: 0 }]);
+    }
+    
+    const handleWinnerChange = (index: number, field: 'email' | 'prize', value: string) => {
+        const newWinners = [...winners];
+        if (field === 'prize') {
+            newWinners[index][field] = parseInt(value) || 0;
+        } else {
+            newWinners[index][field] = value;
+        }
+        setWinners(newWinners);
+    }
+    
+    const handleRemoveWinner = (index: number) => {
+        const newWinners = winners.filter((_, i) => i !== index);
+        setWinners(newWinners);
+    }
+
+    const totalPrizeAllocated = winners.reduce((sum, w) => sum + w.prize, 0);
+
+    const handleConfirm = () => {
+        for (const winner of winners) {
+            if (!winner.email || !/^\S+@\S+\.\S+$/.test(winner.email)) {
+                toast({ variant: 'destructive', title: 'Invalid Email', description: `Please enter a valid email for all winners.` });
+                return;
+            }
+            if (winner.prize <= 0) {
+                toast({ variant: 'destructive', title: 'Invalid Prize', description: `Prize for ${winner.email} must be greater than zero.` });
+                return;
+            }
+        }
+        
+        if (totalPrizeAllocated > tournament.prizePool) {
+             toast({ variant: 'destructive', title: 'Prize Pool Exceeded', description: `Total allocated prize (${totalPrizeAllocated.toLocaleString()}) exceeds the tournament prize pool (${tournament.prizePool.toLocaleString()}).` });
+            return;
+        }
+
+        onDeclareWinner(winners);
+        setOpen(false);
+        setWinners([{ email: '', prize: 0 }]);
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline" className="w-full"><Trophy className="mr-2"/> Declare Winners</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+                 <DialogHeader>
+                    <DialogTitle>Declare Winners for {tournament.title}</DialogTitle>
+                    <DialogDescription>
+                        Enter the winners' emails and their prize amounts. The points will be credited to each winner.
+                        The total prize cannot exceed the tournament prize pool of {tournament.prizePool.toLocaleString()} points.
+                    </DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="max-h-[50vh] pr-4">
+                    <div className="space-y-4 py-4">
+                        {winners.map((winner, index) => (
+                            <div key={index} className="grid grid-cols-12 items-center gap-2 p-2 rounded-md border">
+                                <div className="col-span-6">
+                                    <Label htmlFor={`winnerEmail-${index}`} className="sr-only">Winner's Email</Label>
+                                    <Input id={`winnerEmail-${index}`} type="email" value={winner.email} onChange={e => handleWinnerChange(index, 'email', e.target.value)} placeholder="winner@example.com" />
+                                </div>
+                                <div className="col-span-5">
+                                    <Label htmlFor={`prizeAmount-${index}`} className="sr-only">Prize (Points)</Label>
+                                    <Input id={`prizeAmount-${index}`} type="number" value={winner.prize || ''} onChange={e => handleWinnerChange(index, 'prize', e.target.value)} placeholder="Prize amount" />
+                                </div>
+                                 <div className="col-span-1">
+                                    {winners.length > 1 && (
+                                        <Button variant="ghost" size="icon" onClick={() => handleRemoveWinner(index)}>
+                                            <Trash2 className="w-4 h-4 text-destructive"/>
+                                        </Button>
+                                    )}
+                                 </div>
+                            </div>
+                        ))}
+                    </div>
+                </ScrollArea>
+                 <Button variant="outline" onClick={handleAddWinner} className="mt-2">Add Another Winner</Button>
+                 <div className="text-right font-medium mt-2">
+                    Total Allocated: <span className={cn(totalPrizeAllocated > tournament.prizePool ? 'text-destructive' : 'text-accent')}>{totalPrizeAllocated.toLocaleString()}</span> / {tournament.prizePool.toLocaleString()}
+                 </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                    </DialogClose>
+                    <Button onClick={handleConfirm}>Confirm Winners</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function ResultsCard({ tournament }: { tournament: Tournament }) {
+    if (!tournament.results || tournament.results.length === 0) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Results</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">Tournament results will be posted here after the match concludes.</p>
+                </CardContent>
+            </Card>
+        );
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>🏆 Final Results</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-3">
+                    {tournament.results.sort((a,b) => b.prize - a.prize).map((winner, index) => (
+                        <div key={winner.email} className="flex items-center justify-between p-3 rounded-md bg-muted/50">
+                            <div className="flex items-center gap-3">
+                                <span className="text-xl font-bold w-6 text-center">{index + 1}</span>
+                                <p className="font-medium">{winner.email}</p>
+                            </div>
+                            <p className="font-bold text-accent text-glow-accent flex items-center gap-1">
+                                <CircleDollarSign className="w-5 h-5" />
+                                {winner.prize.toLocaleString()}
+                            </p>
+                        </div>
+                    ))}
                 </div>
             </CardContent>
         </Card>

@@ -1,5 +1,10 @@
 
 
+export type Winner = {
+  email: string;
+  prize: number;
+};
+
 export type Tournament = {
   id: string;
   title: string;
@@ -17,6 +22,7 @@ export type Tournament = {
     id: string;
     pass: string;
   };
+  results?: Winner[];
 };
 
 export type Transaction = {
@@ -38,7 +44,7 @@ export type CoinRequest = {
   status: 'pending' | 'approved' | 'rejected';
   screenshot?: string; 
   redeemCode?: string;
-  tournamentDetails?: Omit<Tournament, 'id' | 'status' | 'creatorId' | 'imageHint'>;
+  tournamentDetails?: Omit<Tournament, 'id' | 'status' | 'creatorId' | 'imageHint' | 'results'>;
   details?: {
     upiId?: string;
     finalAmount?: number;
@@ -79,5 +85,6 @@ export type ChatMessage = {
     userId: string;
     message: string;
     timestamp: string;
+    imageUrl?: string;
 };
     

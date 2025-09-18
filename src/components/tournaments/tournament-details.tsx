@@ -1,29 +1,15 @@
 
 'use client';
 
-import { Tournament, ChatMessage } from '@/lib/types';
+import { Tournament } from '@/lib/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import Image from 'next/image';
 import { GameIcon } from '../icons/game-icon';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, CircleDollarSign, Shield, Users, Trophy } from 'lucide-react';
+import { Calendar, Clock, CircleDollarSign, Shield, Users } from 'lucide-react';
 import TournamentSummaryGenerator from './tournament-summary-generator';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
 type TournamentDetailsProps = {
@@ -34,7 +20,7 @@ type TournamentDetailsProps = {
   onDeclareWinner: (tournament: Tournament, winnerEmail: string, prizeAmount: number) => void;
 };
 
-export default function TournamentDetails({ tournament, onJoin, isAdmin, onDeclareWinner }: TournamentDetailsProps) {
+export default function TournamentDetails({ tournament, onJoin, isAdmin }: TournamentDetailsProps) {
 
   return (
     <Card className="h-full overflow-auto">
@@ -80,8 +66,6 @@ export default function TournamentDetails({ tournament, onJoin, isAdmin, onDecla
         <Button asChild size="lg" className="w-full font-bold text-lg bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow-accent">
             <Link href={`/tournaments/${tournament.id}`}>Join & View Tournament</Link>
         </Button>
-        
-        {isAdmin && <DeclareWinnerDialog tournament={tournament} onDeclareWinner={onDeclareWinner} />}
       </CardContent>
     </Card>
   );
@@ -97,58 +81,3 @@ const InfoChip = ({ icon: Icon, label, value, accent=false }: { icon: React.Elem
         </p>
     </div>
 )
-
-function DeclareWinnerDialog({ tournament, onDeclareWinner }: { tournament: Tournament, onDeclareWinner: TournamentDetailsProps['onDeclareWinner'] }) {
-    const [open, setOpen] = useState(false);
-    const [winnerEmail, setWinnerEmail] = useState('');
-    const [prizeAmount, setPrizeAmount] = useState(tournament.prizePool.toString());
-    const { toast } = useToast();
-
-    const handleConfirm = () => {
-        const prize = parseInt(prizeAmount);
-        if (!winnerEmail || !/^\S+@\S+\.\S+$/.test(winnerEmail)) {
-            toast({ variant: 'destructive', title: 'Invalid Email', description: 'Please enter a valid winner email.' });
-            return;
-        }
-        if (isNaN(prize) || prize <= 0) {
-            toast({ variant: 'destructive', title: 'Invalid Prize', description: 'Please enter a valid prize amount.' });
-            return;
-        }
-
-        onDeclareWinner(tournament, winnerEmail, prize);
-        setOpen(false);
-        setWinnerEmail('');
-    }
-
-    return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline" className="w-full"><Trophy className="mr-2"/> Declare Winner</Button>
-            </DialogTrigger>
-            <DialogContent>
-                 <DialogHeader>
-                    <DialogTitle>Declare Winner for {tournament.title}</DialogTitle>
-                    <DialogDescription>
-                        Enter the winner's email and the prize amount. The points will be credited to the winner.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="winnerEmail" className="text-right">Winner's Email</Label>
-                        <Input id="winnerEmail" type="email" value={winnerEmail} onChange={e => setWinnerEmail(e.target.value)} className="col-span-3" placeholder="winner@example.com" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="prizeAmount" className="text-right">Prize (Points)</Label>
-                        <Input id="prizeAmount" type="number" value={prizeAmount} onChange={e => setPrizeAmount(e.target.value)} className="col-span-3" />
-                    </div>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
-                    </DialogClose>
-                    <Button onClick={handleConfirm}>Confirm Winner</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
-}

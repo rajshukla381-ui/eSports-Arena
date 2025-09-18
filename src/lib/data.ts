@@ -1,6 +1,6 @@
 
 
-import { Tournament, Transaction, TournamentParticipant } from '@/lib/types';
+import { Tournament, Transaction, TournamentParticipant, Winner } from '@/lib/types';
 import { placeholderImages } from '@/lib/placeholder-images.json';
 
 const ffBanner = placeholderImages.find(p => p.id === 'game-ff');
@@ -140,6 +140,21 @@ export const setTournamentRoomDetails = async (tournamentId: string, roomDetails
             const tournamentIndex = tournamentsData.findIndex(t => t.id === tournamentId);
             if (tournamentIndex > -1) {
                 tournamentsData[tournamentIndex].roomDetails = roomDetails;
+                resolve(tournamentsData[tournamentIndex]);
+            } else {
+                resolve(undefined);
+            }
+        }, 50)
+    });
+}
+
+export const declareTournamentWinners = async (tournamentId: string, winners: Winner[]): Promise<Tournament | undefined> => {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            const tournamentIndex = tournamentsData.findIndex(t => t.id === tournamentId);
+            if (tournamentIndex > -1) {
+                tournamentsData[tournamentIndex].status = 'Completed';
+                tournamentsData[tournamentIndex].results = winners;
                 resolve(tournamentsData[tournamentIndex]);
             } else {
                 resolve(undefined);
