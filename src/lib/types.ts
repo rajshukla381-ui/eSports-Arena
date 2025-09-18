@@ -38,7 +38,7 @@ export type CoinRequest = {
   status: 'pending' | 'approved' | 'rejected';
   screenshot?: string; 
   redeemCode?: string;
-  tournamentDetails?: Omit<Tournament, 'id' | 'status' | 'imageHint' | 'creatorId'>;
+  tournamentDetails?: Omit<Tournament, 'id' | 'status' | 'creatorId' | 'imageHint'>;
   details?: {
     upiId?: string;
     finalAmount?: number;
