@@ -30,7 +30,7 @@ export default function AdminPage() {
   const [prizePool, setPrizePool] = useState('');
   const [host, setHost] = useState('');
   const [rules, setRules] = useState('');
-  const [matchTime, setMatchTime]_useState(new Date().toISOString().slice(0, 16));
+  const [matchTime, setMatchTime] = useState(new Date().toISOString().slice(0, 16));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
