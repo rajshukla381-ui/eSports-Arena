@@ -30,9 +30,21 @@ export const updateCoinRequestStatus = async (id: string, status: 'approved' | '
 
                 let message = '';
                 if (status === 'approved') {
-                    message = `Your request for ${request.originalAmount || request.amount} coins has been approved.`;
+                    if (request.type === 'tournament_creation') {
+                        message = `Your tournament "${request.tournamentDetails?.title}" has been approved and is now live!`;
+                    } else if (request.type === 'debit') {
+                        message = `Your redemption request for ${request.originalAmount?.toLocaleString()} coins has been approved.`;
+                    } else {
+                        message = `Your request for ${request.amount.toLocaleString()} coins has been approved.`;
+                    }
                 } else {
-                    message = `Your request for ${request.originalAmount || request.amount} coins has been rejected.`;
+                     if (request.type === 'tournament_creation') {
+                        message = `Your tournament "${request.tournamentDetails?.title}" has been rejected.`;
+                    } else if (request.type === 'debit') {
+                        message = `Your redemption request for ${request.originalAmount?.toLocaleString()} coins has been rejected.`;
+                    } else {
+                        message = `Your request for ${request.amount.toLocaleString()} coins has been rejected.`;
+                    }
                 }
 
                 await addNotification({

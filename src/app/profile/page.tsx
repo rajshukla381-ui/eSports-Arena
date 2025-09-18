@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import type { Tournament } from '@/lib/types';
-import { addTournament } from '@/lib/data';
+import { addCoinRequest } from '@/lib/requests';
 import {
   Select,
   SelectContent,
@@ -19,7 +19,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from 'next/link';
-import { placeholderImages } from '@/lib/placeholder-images.json';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,7 +35,6 @@ import { useAuth } from '@/hooks/use-auth';
 export default function ProfilePage() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const isAdmin = user?.email === 'rajshukla381@gmail.com';
   const [title, setTitle] = useState('');
   const [gameName, setGameName] = useState<'Free Fire' | 'BGMI' | 'Valorant' | ''>('');
   const [entryFee, setEntryFee] = useState('');
@@ -51,7 +49,6 @@ export default function ProfilePage() {
     setMatchTime(new Date().toISOString().slice(0, 16));
   }, []);
 
-  const adminUpiId = '9106059600@fam';
   const feePercentage = 0.20;
   const prizePoolAmount = parseInt(prizePool) || 0;
   const feeAmount = prizePoolAmount * feePercentage;
@@ -68,40 +65,15 @@ export default function ProfilePage() {
       });
       return;
     }
-    if (isAdmin) {
-      handlePaymentConfirm();
-    } else {
-      setShowPaymentDialog(true);
-    }
+    setShowPaymentDialog(true);
   };
   
   const handlePaymentConfirm = async () => {
+    if (!user || !gameName) return;
+
     setShowPaymentDialog(false);
-    
-    const ffBanner = placeholderImages.find(p => p.id === 'game-ff');
-    const bgmiBanner = placeholderImages.find(p => p.id === 'game-bgmi');
-    const valorantBanner = placeholderImages.find(p => p.id === 'game-valorant');
 
-    let imageUrl = '';
-    let imageHint = '';
-
-    switch (gameName) {
-        case 'Free Fire':
-            imageUrl = ffBanner?.imageUrl || '';
-            imageHint = ffBanner?.imageHint || '';
-            break;
-        case 'BGMI':
-            imageUrl = bgmiBanner?.imageUrl || '';
-            imageHint = bgmiBanner?.imageHint || '';
-            break;
-        case 'Valorant':
-            imageUrl = valorantBanner?.imageUrl || '';
-            imageHint = valorantBanner?.imageHint || '';
-            break;
-    }
-
-
-    const newTournament: Omit<Tournament, 'id'> = {
+    const tournamentDetails: Omit<Tournament, 'id' | 'status' | 'imageUrl' | 'imageHint'> = {
       title,
       gameName,
       entryFee: parseInt(entryFee),
@@ -109,17 +81,18 @@ export default function ProfilePage() {
       host,
       rules,
       matchTime: new Date(matchTime).toISOString(),
-      status: 'Upcoming',
-      imageUrl,
-      imageHint
     };
 
-    // In a real app, this would be a request to the admin for approval
-    await addTournament(newTournament);
-
+    await addCoinRequest({
+      userId: user.email,
+      type: 'tournament_creation',
+      amount: totalAmount,
+      tournamentDetails: tournamentDetails,
+    });
+    
     toast({
       title: 'Tournament Request Sent!',
-      description: `Your tournament "${title}" has been submitted for admin approval.`,
+      description: `Your tournament "${title}" has been submitted for admin approval. ${totalAmount.toLocaleString()} coins will be deducted from your wallet upon approval.`,
     });
 
     // Reset form
@@ -132,11 +105,6 @@ export default function ProfilePage() {
     setMatchTime(new Date().toISOString().slice(0, 16));
   };
   
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(adminUpiId);
-    toast({ title: 'Copied!', description: 'UPI ID copied to clipboard.' });
-  }
-
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <Header />
@@ -228,7 +196,7 @@ export default function ProfilePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Coin Payment Required</AlertDialogTitle>
             <AlertDialogDescription>
-              To create your tournament, you need to provide the prize pool and a service fee in coins. This amount will be deducted from your wallet.
+              To create your tournament, you need to provide the prize pool and a service fee in coins. This amount will be deducted from your wallet after admin approval.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-4">

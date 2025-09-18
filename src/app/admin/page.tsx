@@ -6,12 +6,12 @@ import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { CoinRequest, Transaction } from '@/lib/types';
+import { CoinRequest, Tournament } from '@/lib/types';
 import { getCoinRequests, updateCoinRequestStatus } from '@/lib/requests';
-import { addTransaction, getTransactions } from '@/lib/data';
+import { addTransaction, addTournament } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { ArrowDownLeft, ArrowUpRight, Check, XIcon, Copy, Gift, CircleDollarSign, IndianRupee, Play } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Check, XIcon, Copy, Gift, CircleDollarSign, IndianRupee, Play, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { placeholderImages } from '@/lib/placeholder-images.json';
 
 
 export default function AdminPage() {
@@ -38,30 +39,78 @@ export default function AdminPage() {
     const handleRequest = async (request: CoinRequest, newStatus: 'approved' | 'rejected') => {
         
         if (newStatus === 'approved') {
-            const description = request.redeemCode 
-                ? `Redeem Code: ${request.redeemCode}`
-                : request.type === 'credit'
-                ? 'Coins from Admin'
-                : request.redemptionType === 'google_play'
-                ? `Redeemed for ${request.details}`
-                : 'Redeemed to Admin';
-            
-            // For debits (withdrawals), the transaction amount debited from the user's wallet
-            // should be the original requested amount before fees.
-            const transactionAmount = request.type === 'debit' ? request.originalAmount! : request.amount;
+            let description = '';
+            let transactionAmount = 0;
+            let transactionType: 'credit' | 'debit' | 'tournament_creation' = request.type;
 
-            await addTransaction({
-                userId: request.userId,
-                date: new Date().toISOString(),
-                description,
-                amount: transactionAmount,
-                type: request.type,
-            });
+            if (request.type === 'tournament_creation') {
+                 const ffBanner = placeholderImages.find(p => p.id === 'game-ff');
+                const bgmiBanner = placeholderImages.find(p => p.id === 'game-bgmi');
+                const valorantBanner = placeholderImages.find(p => p.id === 'game-valorant');
+                let imageUrl = '';
+                let imageHint = '';
 
-            toast({
-                title: 'Request Approved',
-                description: `A transaction for ${transactionAmount.toLocaleString()} coins has been created for ${request.userId}.`
-            });
+                switch (request.tournamentDetails!.gameName) {
+                    case 'Free Fire':
+                        imageUrl = ffBanner?.imageUrl || '';
+                        imageHint = ffBanner?.imageHint || '';
+                        break;
+                    case 'BGMI':
+                        imageUrl = bgmiBanner?.imageUrl || '';
+                        imageHint = bgmiBanner?.imageHint || '';
+                        break;
+                    case 'Valorant':
+                        imageUrl = valorantBanner?.imageUrl || '';
+                        imageHint = valorantBanner?.imageHint || '';
+                        break;
+                }
+
+                const newTournament: Omit<Tournament, 'id'> = {
+                    ...request.tournamentDetails!,
+                    status: 'Upcoming',
+                    imageUrl,
+                    imageHint
+                };
+                await addTournament(newTournament);
+                
+                // This is a debit from the tournament creator's wallet
+                await addTransaction({
+                    userId: request.userId,
+                    date: new Date().toISOString(),
+                    description: `Creation fee for ${request.tournamentDetails!.title}`,
+                    amount: request.amount,
+                    type: 'debit',
+                });
+                
+                toast({
+                    title: 'Tournament Approved',
+                    description: `${request.tournamentDetails!.title} is now live and ${request.amount.toLocaleString()} coins have been debited from ${request.userId}.`
+                });
+
+            } else {
+                 description = request.redeemCode 
+                    ? `Redeem Code: ${request.redeemCode}`
+                    : request.type === 'credit'
+                    ? 'Coins from Admin'
+                    : request.redemptionType === 'google_play'
+                    ? `Redeemed for ${request.details}`
+                    : 'Redeemed to Admin';
+                
+                transactionAmount = request.type === 'debit' ? request.originalAmount! : request.amount;
+
+                await addTransaction({
+                    userId: request.userId,
+                    date: new Date().toISOString(),
+                    description,
+                    amount: transactionAmount,
+                    type: request.type,
+                });
+
+                 toast({
+                    title: 'Request Approved',
+                    description: `A transaction for ${transactionAmount.toLocaleString()} coins has been created for ${request.userId}.`
+                });
+            }
         } else {
              toast({
                 title: 'Request Rejected',
@@ -69,7 +118,6 @@ export default function AdminPage() {
             });
         }
         
-        // This needs to be called AFTER addTransaction and toast so the notification is created
         await updateCoinRequestStatus(request.id, newStatus);
         
         setRequests(requests.filter(r => r.id !== request.id));
@@ -93,8 +141,8 @@ export default function AdminPage() {
             
             <Card>
                 <CardHeader>
-                    <CardTitle>Coin Requests</CardTitle>
-                    <CardDescription>Approve or reject coin credit and redemption requests from users.</CardDescription>
+                    <CardTitle>Pending Requests</CardTitle>
+                    <CardDescription>Approve or reject coin, redemption, and tournament creation requests from users.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -113,9 +161,9 @@ export default function AdminPage() {
                             <TableRow key={request.id}>
                                 <TableCell>{request.userId}</TableCell>
                                 <TableCell>
-                                    <Badge variant={request.type === 'credit' ? 'secondary' : 'destructive'}>
-                                        {request.redeemCode ? <Gift className="w-4 h-4 mr-1"/> : request.type === 'credit' ? <ArrowUpRight className="w-4 h-4 mr-1"/> : <ArrowDownLeft className="w-4 h-4 mr-1"/>}
-                                        {request.redeemCode ? 'Redeem' : request.type}
+                                    <Badge variant={request.type === 'credit' ? 'secondary' : request.type === 'tournament_creation' ? 'default' : 'destructive'}>
+                                        {request.type === 'redeemCode' ? <Gift className="w-4 h-4 mr-1"/> : request.type === 'credit' ? <ArrowUpRight className="w-4 h-4 mr-1"/> : request.type === 'tournament_creation' ? <Trophy className="w-4 h-4 mr-1" /> : <ArrowDownLeft className="w-4 h-4 mr-1"/>}
+                                        {request.redeemCode ? 'Redeem' : request.type.replace('_', ' ')}
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
@@ -138,7 +186,7 @@ export default function AdminPage() {
                                         )}
                                     </div>
                                 </TableCell>
-                                <TableCell className="text-xs">
+                                <TableCell className="text-xs max-w-[200px] truncate">
                                      {request.redemptionType === 'upi' && `UPI: ${request.upiId}`}
                                      {request.redemptionType === 'google_play' && (
                                          <Badge variant="outline" className='gap-1'><Play className='w-3 h-3 text-green-500'/> Google Play</Badge>
@@ -151,6 +199,9 @@ export default function AdminPage() {
                                                 <Copy className="w-3 h-3" />
                                             </Button>
                                         </div>
+                                    )}
+                                    {request.type === 'tournament_creation' && request.tournamentDetails && (
+                                        <span>{request.tournamentDetails.title}</span>
                                     )}
                                 </TableCell>
                                 <TableCell>{format(new Date(request.date), 'PPp')}</TableCell>
@@ -175,26 +226,6 @@ export default function AdminPage() {
                 </CardContent>
             </Card>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Tournament Creation</CardTitle>
-                    <CardDescription>How users create tournaments.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <p>
-                        Users can now create their own tournaments directly from their profile page.
-                    </p>
-                    <p>
-                        When a user creates a tournament, they are required to pay the full prize pool amount plus a 20% service fee to the main administrator's UPI address.
-                    </p>
-                    <p>
-                        Once the payment is confirmed by the admin, the tournament will become visible to all users.
-                    </p>
-                     <Link href="/profile" passHref>
-                        <Button>Go to Profile to Create</Button>
-                    </Link>
-                </CardContent>
-            </Card>
         </div>
       </main>
     </div>
