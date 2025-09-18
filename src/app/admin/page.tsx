@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,12 +7,12 @@ import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { CoinRequest, Tournament, Transaction } from '@/lib/types';
+import { CoinRequest, Tournament, Transaction, UserProfile } from '@/lib/types';
 import { getCoinRequests, updateCoinRequestStatus } from '@/lib/requests';
-import { addTransaction, addTournament, getTransactions } from '@/lib/data';
+import { addTransaction, addTournament, getTransactions, getTournaments, deleteTournament as deleteTournamentFromData } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { ArrowUpRight, Check, XIcon, Copy, Gift, CircleDollarSign, Trophy, ArrowDownLeft } from 'lucide-react';
+import { ArrowUpRight, Check, XIcon, Copy, Gift, CircleDollarSign, Trophy, ArrowDownLeft, Ban, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -37,22 +38,32 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { getAllUsers, updateUserBlockedStatus } from '@/lib/users';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 
 export default function AdminPage() {
     const [requests, setRequests] = useState<CoinRequest[]>([]);
     const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
+    const [allTournaments, setAllTournaments] = useState<Tournament[]>([]);
+    const [users, setUsers] = useState<UserProfile[]>([]);
     const { toast } = useToast();
 
-    useEffect(() => {
-        const fetchData = async () => {
-            const pendingRequests = await getCoinRequests();
-            setRequests(pendingRequests.filter(r => r.status === 'pending'));
-            
-            const transactions = await getTransactions();
-            setAllTransactions(transactions);
-        };
+    const fetchData = async () => {
+        const pendingRequests = await getCoinRequests();
+        setRequests(pendingRequests.filter(r => r.status === 'pending'));
         
+        const transactions = await getTransactions();
+        setAllTransactions(transactions);
+
+        const tournaments = await getTournaments();
+        setAllTournaments(tournaments);
+
+        const userProfiles = await getAllUsers();
+        setUsers(userProfiles);
+    };
+
+    useEffect(() => {
         fetchData();
         const interval = setInterval(fetchData, 3000); // Refresh data every 3 seconds
         return () => clearInterval(interval);
@@ -130,13 +141,32 @@ export default function AdminPage() {
         
         await updateCoinRequestStatus(request.id, newStatus, sentRedeemCode);
         
-        setRequests(requests.filter(r => r.id !== request.id));
+        fetchData();
     };
 
     const copyToClipboard = (text: string, label: string) => {
         navigator.clipboard.writeText(text);
         toast({ title: 'Copied!', description: `${label} copied to clipboard.` });
     }
+
+    const handleToggleBlockUser = async (userId: string, isBlocked: boolean) => {
+        await updateUserBlockedStatus(userId, !isBlocked);
+        toast({
+            title: `User ${!isBlocked ? 'Blocked' : 'Unblocked'}`,
+            description: `User ${userId} has been ${!isBlocked ? 'blocked' : 'unblocked'}.`
+        });
+        fetchData();
+    }
+    
+    const deleteTournament = async (tournamentId: string) => {
+        await deleteTournamentFromData(tournamentId);
+        toast({
+            title: 'Tournament Deleted',
+            description: 'The tournament has been removed.'
+        });
+        fetchData();
+    }
+
 
     const renderTypeBadge = (request: CoinRequest) => {
         switch(request.type) {
@@ -175,8 +205,8 @@ export default function AdminPage() {
                 <p className="text-muted-foreground">Manage your eSports Arena</p>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <Card className="lg:col-span-2">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <Card className="lg:col-span-3">
                     <CardHeader>
                         <CardTitle>Pending Requests</CardTitle>
                         <CardDescription>Approve or reject point and tournament creation requests from users.</CardDescription>
@@ -289,6 +319,85 @@ export default function AdminPage() {
                         </ScrollArea>
                     </CardContent>
                 </Card>
+
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>User Management</CardTitle>
+                        <CardDescription>Block or unblock users from accessing the app.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                       <ScrollArea className="h-[400px]">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>User ID</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Action</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {users.filter(u => u.role !== 'admin').map(user => (
+                                        <TableRow key={user.email}>
+                                            <TableCell className="truncate max-w-[150px]">{user.email}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={user.isBlocked ? 'destructive' : 'secondary'}>
+                                                    {user.isBlocked ? 'Blocked' : 'Active'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleToggleBlockUser(user.email, user.isBlocked)}
+                                                >
+                                                    <Ban className="w-4 h-4 mr-2" />
+                                                    {user.isBlocked ? 'Unblock' : 'Block'}
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </ScrollArea>
+                    </CardContent>
+                </Card>
+
+                 <Card className="lg:col-span-3">
+                    <CardHeader>
+                        <CardTitle>All Tournaments</CardTitle>
+                        <CardDescription>View and manage all live and upcoming tournaments.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ScrollArea className="h-[400px]">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Title</TableHead>
+                                        <TableHead>Game</TableHead>
+                                        <TableHead>Prize Pool</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Action</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {allTournaments.map(t => (
+                                        <TableRow key={t.id}>
+                                            <TableCell className="font-medium">{t.title}</TableCell>
+                                            <TableCell>{t.gameName}</TableCell>
+                                            <TableCell>{t.prizePool.toLocaleString()}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={t.status === 'Upcoming' ? 'secondary' : 'default'}>{t.status}</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <DeleteTournamentDialog tournament={t} onDelete={deleteTournament} />
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </ScrollArea>
+                    </CardContent>
+                </Card>
             </div>
         </div>
       </main>
@@ -340,3 +449,30 @@ function SendCodeDialog({ request, onConfirm }: { request: CoinRequest, onConfir
         </Dialog>
     )
 }
+
+function DeleteTournamentDialog({ tournament, onDelete }: { tournament: Tournament, onDelete: (id: string) => void}) {
+    return (
+        <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="icon" className="h-8 w-8">
+                    <Trash2 className="w-4 h-4" />
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the tournament
+                        "{tournament.title}".
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onDelete(tournament.id)}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+}
+
+    

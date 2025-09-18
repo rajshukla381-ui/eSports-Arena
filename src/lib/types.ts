@@ -1,5 +1,6 @@
 
 
+
 export type Tournament = {
   id: string;
   title: string;
@@ -56,3 +57,11 @@ export type Notification = {
     isRead: boolean;
     link?: string;
 };
+
+export type UserProfile = {
+  email: string;
+  role: 'guest' | 'admin';
+  isBlocked: boolean;
+};
+
+    

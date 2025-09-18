@@ -1,4 +1,5 @@
 
+
 import { Tournament, Transaction } from '@/lib/types';
 import { placeholderImages } from '@/lib/placeholder-images.json';
 
@@ -80,6 +81,11 @@ export const addTournament = async (tournament: Omit<Tournament, 'id'>): Promise
     return new Promise(resolve => setTimeout(() => resolve(newTournament), 50));
 }
 
+export const deleteTournament = async (tournamentId: string): Promise<void> => {
+    tournamentsData = tournamentsData.filter(t => t.id !== tournamentId);
+    return new Promise(resolve => setTimeout(() => resolve(), 50));
+}
+
 export const getTransactions = async (userId?: string): Promise<Transaction[]> => {
   return new Promise(resolve => setTimeout(() => {
     if (userId) {
@@ -96,3 +102,5 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
   transactionsData.unshift(newTransaction);
   return new Promise(resolve => setTimeout(() => resolve(newTransaction), 50));
 };
+
+    

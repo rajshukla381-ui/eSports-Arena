@@ -1,19 +1,18 @@
 
+
 'use client';
 
 import { useRouter } from 'next/navigation';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-
-type User = {
-  email: string;
-  role: 'guest' | 'admin';
-};
+import { UserProfile } from '@/lib/types';
+import { getUser, createUser } from '@/lib/users';
 
 type AuthContextType = {
-  user: User | null;
+  user: UserProfile | null;
   loading: boolean;
-  signInAsGuest: () => void;
-  signInAsAdmin: (secret: string) => boolean;
+  error: string | null;
+  signInAsGuest: () => Promise<void>;
+  signInAsAdmin: (secret: string) => Promise<boolean>;
   signOut: () => void;
 };
 
@@ -24,37 +23,66 @@ const ADMIN_SECRET_ANSWER = "Raj";
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  signInAsGuest: () => {},
-  signInAsAdmin: () => false,
+  error: null,
+  signInAsGuest: async () => {},
+  signInAsAdmin: async () => false,
   signOut: () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    try {
-      const storedUser = window.localStorage.getItem(AUTH_USER_KEY);
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+    const checkUser = async () => {
+      try {
+        const storedUserJSON = window.localStorage.getItem(AUTH_USER_KEY);
+        if (storedUserJSON) {
+          const storedUser: UserProfile = JSON.parse(storedUserJSON);
+          const fullUser = await getUser(storedUser.email);
+
+          if (fullUser?.isBlocked) {
+            setError('Your account has been blocked by an administrator.');
+            window.localStorage.removeItem(AUTH_USER_KEY);
+            setUser(null);
+          } else {
+            setUser(fullUser);
+          }
+        }
+      } catch (e) {
+        console.error("Could not parse user from localStorage", e);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Could not parse user from localStorage", error);
-    }
-    setLoading(false);
+    };
+    checkUser();
   }, []);
 
-  const signInAsGuest = () => {
-    const guestUser: User = { email: `guest_${Date.now()}`, role: 'guest' };
+  const signInAsGuest = async () => {
+    const guestEmail = `guest_${Date.now()}`;
+    let guestUser = await getUser(guestEmail);
+    if (!guestUser) {
+      guestUser = await createUser(guestEmail, 'guest');
+    }
+    
+    if (guestUser.isBlocked) {
+        setError('Your account has been blocked by an administrator.');
+        setUser(null);
+        return;
+    }
+
     window.localStorage.setItem(AUTH_USER_KEY, JSON.stringify(guestUser));
     setUser(guestUser);
   };
 
-  const signInAsAdmin = (secret: string) => {
+  const signInAsAdmin = async (secret: string) => {
     if (secret === ADMIN_SECRET_ANSWER) {
-      const adminUser: User = { email: ADMIN_EMAIL, role: 'admin' };
+      let adminUser = await getUser(ADMIN_EMAIL);
+      if (!adminUser) {
+          adminUser = await createUser(ADMIN_EMAIL, 'admin');
+      }
       window.localStorage.setItem(AUTH_USER_KEY, JSON.stringify(adminUser));
       setUser(adminUser);
       return true;
@@ -69,10 +97,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInAsGuest, signInAsAdmin, signOut }}>
+    <AuthContext.Provider value={{ user, loading, error, signInAsGuest, signInAsAdmin, signOut }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => useContext(AuthContext);
+
+    

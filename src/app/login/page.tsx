@@ -1,10 +1,11 @@
 
+
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Swords, User, ShieldCheck } from 'lucide-react';
+import { Swords, User, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import {
   Dialog,
@@ -23,22 +24,25 @@ const ADMIN_SECRET_ANSWER = "Raj"; // The answer to the secret question
 
 export default function RoleSelectionPage() {
   const router = useRouter();
-  const { signInAsGuest, signInAsAdmin } = useAuth();
+  const { signInAsGuest, signInAsAdmin, error } = useAuth();
   const { toast } = useToast();
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
   const [secretAnswer, setSecretAnswer] = useState('');
 
   const handleUserSelection = () => {
     signInAsGuest();
-    router.push('/');
+    if (!error) {
+      router.push('/');
+    }
   };
 
   const handleAdminSelection = () => {
     setIsAdminDialogOpen(true);
   };
 
-  const handleAdminLogin = () => {
-    if (signInAsAdmin(secretAnswer)) {
+  const handleAdminLogin = async () => {
+    const isAdmin = await signInAsAdmin(secretAnswer);
+    if (isAdmin) {
       toast({
         title: 'Admin Access Granted',
         description: 'Welcome, Admin!',
@@ -54,6 +58,19 @@ export default function RoleSelectionPage() {
     }
     setSecretAnswer('');
   };
+
+  if (error) {
+    return (
+       <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
+        <div className="flex flex-col items-center gap-6 p-8 rounded-lg shadow-glow-destructive bg-card border border-destructive w-full max-w-sm text-center">
+            <AlertTriangle className="h-16 w-16 text-destructive" />
+             <h1 className="text-3xl font-bold text-destructive">Access Denied</h1>
+             <p className="text-muted-foreground">{error}</p>
+              <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
+       </div>
+    )
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
@@ -107,3 +124,5 @@ export default function RoleSelectionPage() {
     </div>
   );
 }
+
+    
