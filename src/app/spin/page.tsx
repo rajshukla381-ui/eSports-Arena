@@ -5,13 +5,15 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { addTransaction, getTransactions } from '@/lib/data';
+import { addTransaction } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import SpinWheel from '@/components/spin-wheel/spin-wheel';
+import SpinWheel, { prizes as spinPrizes } from '@/components/spin-wheel/spin-wheel';
 import { Transaction } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { CircleDollarSign } from 'lucide-react';
 
 const LAST_SPIN_KEY = 'last_spin_date';
 
@@ -106,6 +108,21 @@ export default function SpinPage() {
                 </CardHeader>
                 <CardContent className="space-y-8">
                     <SpinWheel onSpinFinish={handleSpinFinish} startSpin={isSpinning} />
+                    
+                    <div className="space-y-4">
+                        <h4 className="font-semibold">Possible Prizes</h4>
+                        <div className="flex flex-wrap justify-center gap-2">
+                            {spinPrizes.map((prize, index) => (
+                                prize > 0 ? (
+                                    <Badge key={index} variant="secondary" className="flex items-center gap-1 text-base">
+                                        <CircleDollarSign className="w-4 h-4 text-primary" />
+                                        {prize.toLocaleString()}
+                                    </Badge>
+                                ) : null
+                            ))}
+                        </div>
+                    </div>
+                    
                     {canSpin ? (
                         <Button
                             size="lg"

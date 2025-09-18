@@ -6,7 +6,7 @@ import styles from './spin-wheel.module.css';
 import { cn } from '@/lib/utils';
 import { CircleDollarSign } from 'lucide-react';
 
-const prizes = [100, 500, 1000, 20, 5000, 0, 200, 10];
+export const prizes = [100, 500, 1000, 20, 5000, 0, 200, 10];
 const totalPrizes = prizes.length;
 const anglePerSlice = 360 / totalPrizes;
 
@@ -70,4 +70,3 @@ const SpinWheel: React.FC<SpinWheelProps> = ({ onSpinFinish, startSpin }) => {
 };
 
 export default SpinWheel;
-
