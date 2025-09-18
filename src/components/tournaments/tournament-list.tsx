@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Tournament } from '@/lib/types';
 import TournamentCard from './tournament-card';
 import Link from 'next/link';
+import AdBanner from '../ads/ad-banner';
 
 type TournamentListProps = {
   tournaments: Tournament[];
@@ -37,6 +38,7 @@ export default function TournamentList({
               />
             </Link>
           ))}
+          <AdBanner />
         </div>
       </CardContent>
     </Card>

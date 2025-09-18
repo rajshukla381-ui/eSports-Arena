@@ -78,6 +78,12 @@
       "description": "500 coin pack",
       "imageUrl": "https://picsum.photos/seed/coin-pack-9/100/100",
       "imageHint": "handful coins"
+    },
+    {
+      "id": "ad-banner-1",
+      "description": "Placeholder for a vertical ad banner",
+      "imageUrl": "https://picsum.photos/seed/ad1/400/200",
+      "imageHint": "gaming advertisement"
     }
   ]
 }
