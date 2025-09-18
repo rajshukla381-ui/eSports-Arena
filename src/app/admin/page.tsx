@@ -11,7 +11,7 @@ import { getCoinRequests, updateCoinRequestStatus } from '@/lib/requests';
 import { addTransaction, addTournament, getTransactions, getTournaments, deleteTournament as deleteTournamentFromData } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { ArrowUpRight, Check, XIcon, Copy, Gift, CircleDollarSign, Trophy, ArrowDownLeft, Ban, Trash2 } from 'lucide-react';
+import { ArrowUpRight, Check, XIcon, Copy, Gift, CircleDollarSign, Trophy, ArrowDownLeft, Ban, Trash2, Send } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -37,6 +37,8 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getAllUsers, updateUserBlockedStatus } from '@/lib/users';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { addNotification } from '@/lib/notifications';
 
 
 export default function AdminPage() {
@@ -44,6 +46,8 @@ export default function AdminPage() {
     const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
     const [allTournaments, setAllTournaments] = useState<Tournament[]>([]);
     const [users, setUsers] = useState<UserProfile[]>([]);
+    const [recipientEmail, setRecipientEmail] = useState('');
+    const [sendAmount, setSendAmount] = useState('');
     const { toast } = useToast();
 
     const fetchData = async () => {
@@ -143,6 +147,40 @@ export default function AdminPage() {
         fetchData();
     }
 
+    const handleSendCoins = async () => {
+        const amountNum = parseInt(sendAmount);
+        if (!recipientEmail || !/^\S+@\S+\.\S+$/.test(recipientEmail)) {
+            toast({ variant: 'destructive', title: 'Invalid Email', description: 'Please enter a valid recipient email.' });
+            return;
+        }
+        if (isNaN(amountNum) || amountNum <= 0) {
+            toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid amount.' });
+            return;
+        }
+
+        await addTransaction({
+            userId: recipientEmail,
+            date: new Date().toISOString(),
+            description: 'Points from Admin',
+            amount: amountNum,
+            type: 'credit',
+        });
+
+        await addNotification({
+            userId: recipientEmail,
+            message: `You have received ${amountNum.toLocaleString()} points from an admin.`
+        });
+        
+        toast({
+            title: 'Coins Sent!',
+            description: `Successfully sent ${amountNum.toLocaleString()} points to ${recipientEmail}.`,
+        });
+
+        setRecipientEmail('');
+        setSendAmount('');
+        fetchData();
+    }
+
 
     const renderTypeBadge = (request: CoinRequest) => {
         switch(request.type) {
@@ -182,6 +220,69 @@ export default function AdminPage() {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                 <Card className="lg:col-span-1">
+                    <CardHeader>
+                        <CardTitle>Send Coins</CardTitle>
+                        <CardDescription>Directly credit points to any user's wallet.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="recipientEmail">Recipient Email</Label>
+                            <Input id="recipientEmail" type="email" placeholder="user@example.com" value={recipientEmail} onChange={e => setRecipientEmail(e.target.value)} />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="sendAmount">Amount</Label>
+                            <Input id="sendAmount" type="number" placeholder="e.g., 5000" value={sendAmount} onChange={e => setSendAmount(e.target.value)} />
+                        </div>
+                        <Button className="w-full" onClick={handleSendCoins}>
+                            <Send className="w-4 h-4 mr-2" />
+                            Send Coins
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle>User Management</CardTitle>
+                        <CardDescription>Block or unblock users from accessing the app.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                       <ScrollArea className="h-[238px]">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>User ID</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Action</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {users.filter(u => u.role !== 'admin').map(user => (
+                                        <TableRow key={user.email}>
+                                            <TableCell className="truncate max-w-[150px]">{user.email}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={user.isBlocked ? 'destructive' : 'secondary'}>
+                                                    {user.isBlocked ? 'Blocked' : 'Active'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleToggleBlockUser(user.email, user.isBlocked)}
+                                                >
+                                                    <Ban className="w-4 h-4 mr-2" />
+                                                    {user.isBlocked ? 'Unblock' : 'Block'}
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </ScrollArea>
+                    </CardContent>
+                </Card>
+
                 <Card className="lg:col-span-3">
                     <CardHeader>
                         <CardTitle>Pending Requests</CardTitle>
@@ -262,7 +363,7 @@ export default function AdminPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="lg:col-span-2">
+                <Card className="lg:col-span-3">
                     <CardHeader>
                         <CardTitle>All Transactions</CardTitle>
                         <CardDescription>A log of all transactions happening on the platform.</CardDescription>
@@ -290,48 +391,6 @@ export default function AdminPage() {
                                             )}>
                                                 {tx.type === 'credit' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownLeft className="w-4 h-4" />}
                                                 {tx.amount.toLocaleString()}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </ScrollArea>
-                    </CardContent>
-                </Card>
-
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>User Management</CardTitle>
-                        <CardDescription>Block or unblock users from accessing the app.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <ScrollArea className="h-[400px]">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>User ID</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Action</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {users.filter(u => u.role !== 'admin').map(user => (
-                                        <TableRow key={user.email}>
-                                            <TableCell className="truncate max-w-[150px]">{user.email}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={user.isBlocked ? 'destructive' : 'secondary'}>
-                                                    {user.isBlocked ? 'Blocked' : 'Active'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleToggleBlockUser(user.email, user.isBlocked)}
-                                                >
-                                                    <Ban className="w-4 h-4 mr-2" />
-                                                    {user.isBlocked ? 'Unblock' : 'Block'}
-                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -453,3 +512,4 @@ function DeleteTournamentDialog({ tournament, onDelete }: { tournament: Tourname
         </AlertDialog>
     );
 }
+
