@@ -84,24 +84,41 @@ export default function Home() {
         });
         return;
       }
+      
+      const newTransaction: Transaction = {
+        id: `t${transactions.length + 1}`,
+        date: new Date().toISOString(),
+        description: `Redeemed to Admin`,
+        amount: amount,
+        type: 'debit',
+      };
+      if (!isAdmin) {
+          setTransactions([newTransaction, ...transactions]);
+      }
+
       toast({
         title: 'Redemption Request Sent',
-        description: `Your request to redeem ${amount.toLocaleString()} coins to ${upiId} has been sent to the admin for approval.`,
+        description: `Your request to redeem ${amount.toLocaleString()} coins to ${upiId} has been sent for approval.`,
       });
-      // In a real app, you would not deduct this immediately. 
-      // We are not creating a transaction here as it needs admin approval.
-      // We will just show a notification.
       return;
     }
 
     if (type === 'credit') {
+       const newTransaction: Transaction = {
+        id: `t${transactions.length + 1}`,
+        date: new Date().toISOString(),
+        description: 'Coins from Admin',
+        amount: amount,
+        type: 'credit',
+      };
+       if (!isAdmin) {
+          setTransactions([newTransaction, ...transactions]);
+       }
+
       toast({
-        title: 'Coin Request Sent',
-        description: `Your request to purchase ${amount.toLocaleString()} coins has been sent to the admin for approval. Screenshot: ${screenshot?.name}`,
+        title: 'Coin Request Approved',
+        description: `${amount.toLocaleString()} coins have been added to your wallet.`,
       });
-      // In a real app, you would not credit this immediately.
-      // We are not creating a transaction here as it needs admin approval.
-      return;
     }
   };
 
