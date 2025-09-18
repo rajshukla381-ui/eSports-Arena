@@ -63,7 +63,7 @@ export default function ProfilePage() {
     
     if (!user || !gameName) return;
 
-    const tournamentDetails: Omit<Tournament, 'id' | 'status' | 'imageUrl' | 'imageHint' | 'entryFee'> = {
+    const tournamentDetails: Omit<Tournament, 'id' | 'status' | 'imageUrl' | 'imageHint' | 'creatorId' | 'entryFee'> = {
       title,
       gameName,
       prizePool: parseInt(prizePool),

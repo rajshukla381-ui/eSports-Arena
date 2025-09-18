@@ -122,6 +122,8 @@ export default function TournamentPage({ params }: { params: { tournamentId: str
     );
   }
 
+  const canEditRoom = user?.role === 'admin' || user?.email === tournament.creatorId;
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
@@ -171,7 +173,7 @@ export default function TournamentPage({ params }: { params: { tournamentId: str
                         <p className="text-4xl font-bold text-accent text-glow-accent">{tournament.prizePool.toLocaleString()} Points</p>
                     </CardContent>
                 </Card>
-                <RoomDetailsCard tournament={tournament} isAdmin={user?.role === 'admin'} onSetRoomDetails={handleSetRoomDetails}/>
+                <RoomDetailsCard tournament={tournament} canEdit={canEditRoom} onSetRoomDetails={handleSetRoomDetails}/>
             </div>
           </div>
         </div>
@@ -180,7 +182,7 @@ export default function TournamentPage({ params }: { params: { tournamentId: str
   );
 }
 
-function RoomDetailsCard({ tournament, isAdmin, onSetRoomDetails }: { tournament: Tournament, isAdmin: boolean, onSetRoomDetails: (details: {id: string, pass: string}) => void }) {
+function RoomDetailsCard({ tournament, canEdit, onSetRoomDetails }: { tournament: Tournament, canEdit: boolean, onSetRoomDetails: (details: {id: string, pass: string}) => void }) {
     const [roomId, setRoomId] = useState(tournament.roomDetails?.id || '');
     const [roomPass, setRoomPass] = useState(tournament.roomDetails?.pass || '');
     const [showPass, setShowPass] = useState(false);
@@ -191,7 +193,7 @@ function RoomDetailsCard({ tournament, isAdmin, onSetRoomDetails }: { tournament
         toast({ title: 'Copied!', description: `${label} copied to clipboard.` });
     }
 
-    if (isAdmin) {
+    if (canEdit) {
         return (
             <Card>
                 <CardHeader>
@@ -244,7 +246,7 @@ function RoomDetailsCard({ tournament, isAdmin, onSetRoomDetails }: { tournament
                         </div>
                     </>
                 ) : (
-                    <p className="text-muted-foreground text-center py-4">Room details have not been posted by the admin yet. Please check back later.</p>
+                    <p className="text-muted-foreground text-center py-4">Room details have not been posted by the admin or creator yet. Please check back later.</p>
                 )}
             </CardContent>
         </Card>
@@ -350,4 +352,3 @@ function TournamentChat({ tournamentId, currentUserEmail }: { tournamentId: stri
         </Card>
     );
 }
-

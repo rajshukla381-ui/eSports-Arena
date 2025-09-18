@@ -9,6 +9,7 @@ export type Tournament = {
   host: string;
   rules: string;
   matchTime: string;
+  creatorId: string;
   status: 'Upcoming' | 'Live' | 'Completed';
   imageUrl: string;
   imageHint: string;
@@ -37,7 +38,7 @@ export type CoinRequest = {
   status: 'pending' | 'approved' | 'rejected';
   screenshot?: string; 
   redeemCode?: string;
-  tournamentDetails?: Omit<Tournament, 'id' | 'status' | 'imageUrl' | 'imageHint'>;
+  tournamentDetails?: Omit<Tournament, 'id' | 'status' | 'imageUrl' | 'imageHint' | 'creatorId'>;
   details?: {
     upiId?: string;
     finalAmount?: number;

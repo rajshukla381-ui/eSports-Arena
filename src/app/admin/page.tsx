@@ -96,6 +96,7 @@ export default function AdminPage() {
 
                 const newTournament: Omit<Tournament, 'id'> = {
                     ...request.tournamentDetails!,
+                    creatorId: request.userId,
                     status: 'Upcoming',
                     imageUrl,
                     imageHint
@@ -474,5 +475,3 @@ function DeleteTournamentDialog({ tournament, onDelete }: { tournament: Tourname
         </AlertDialog>
     );
 }
-
-    
