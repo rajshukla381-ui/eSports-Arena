@@ -18,4 +18,16 @@ export type Transaction = {
   description: string;
   amount: number;
   type: 'credit' | 'debit';
+  userId?: string; // Keep track of user for crediting wins
+};
+
+export type CoinRequest = {
+  id: string;
+  userId: string;
+  date: string;
+  type: 'credit' | 'debit';
+  amount: number;
+  status: 'pending' | 'approved' | 'rejected';
+  upiId?: string;
+  screenshot?: string; // For simulation, we'll just store a name
 };

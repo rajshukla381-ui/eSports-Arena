@@ -127,7 +127,7 @@ function DeclareWinnerDialog({ tournament, onDeclareWinner }: { tournament: Tour
                  <DialogHeader>
                     <DialogTitle>Declare Winner for {tournament.title}</DialogTitle>
                     <DialogDescription>
-                        Enter the winner's email and the prize amount. The coins will be debited from the admin wallet and credited to the winner.
+                        Enter the winner's email and the prize amount. The coins will be credited to the winner.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">

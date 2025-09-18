@@ -61,13 +61,11 @@ let tournamentsData: Tournament[] = [
   },
 ];
 
-const transactionsData: Transaction[] = [
-  { id: 't1', date: '2024-07-28', description: 'Initial Coin Balance', amount: 50000, type: 'credit' },
-  { id: 't2', date: '2024-07-27', description: 'Free Fire Weekly Entry Fee', amount: 500, type: 'debit' },
-  { id: 't3', date: '2024-07-26', description: 'Won BGMI Solo Challenge', amount: 15000, type: 'credit' },
-  { id: 't4', date: '2024-07-25', description: 'Redeemed for store credit', amount: 20000, type: 'debit' },
-  { id: 't5', date: '2024-07-24', description: 'Valorant Aces Entry Fee', amount: 1000, type: 'debit' },
-  { id: 't6', date: '2024-07-23', description: 'Top-up coins', amount: 10000, type: 'credit' },
+let transactionsData: Transaction[] = [
+  { id: 't1', date: '2024-07-28', description: 'Initial Coin Balance', amount: 50000, type: 'credit', userId: 'player@example.com' },
+  { id: 't2', date: '2024-07-27', description: 'Free Fire Weekly Entry Fee', amount: 500, type: 'debit', userId: 'player@example.com' },
+  { id: 't3', date: '2024-07-26', description: 'Won BGMI Solo Challenge', amount: 15000, type: 'credit', userId: 'player@example.com' },
+  { id: 't4', date: '2024-07-25', description: 'Redeemed for store credit', amount: 20000, type: 'debit', userId: 'player@example.com' },
 ];
 
 
@@ -82,6 +80,18 @@ export const addTournament = async (tournament: Omit<Tournament, 'id'>): Promise
     return new Promise(resolve => setTimeout(() => resolve(newTournament), 50));
 }
 
-export const getTransactions = async (): Promise<Transaction[]> => {
-  return new Promise(resolve => setTimeout(() => resolve(transactionsData), 50));
+export const getTransactions = async (userId?: string): Promise<Transaction[]> => {
+  return new Promise(resolve => setTimeout(() => {
+    if (!userId) {
+        return resolve([]);
+    }
+    const userTransactions = transactionsData.filter(t => t.userId === userId);
+    return resolve(userTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+  }, 50));
+};
+
+export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<Transaction> => {
+  const newTransaction = { ...transaction, id: `t-${Date.now()}` };
+  transactionsData.unshift(newTransaction);
+  return new Promise(resolve => setTimeout(() => resolve(newTransaction), 50));
 };

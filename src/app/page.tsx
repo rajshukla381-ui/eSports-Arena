@@ -6,7 +6,8 @@ import { Header } from '@/components/layout/header';
 import TournamentDetails from '@/components/tournaments/tournament-details';
 import TournamentList from '@/components/tournaments/tournament-list';
 import WalletHistory from '@/components/wallet/wallet-history';
-import { getTournaments, getTransactions } from '@/lib/data';
+import { getTournaments, getTransactions, addTransaction } from '@/lib/data';
+import { addCoinRequest } from '@/lib/requests';
 import type { Tournament, Transaction } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -28,14 +29,19 @@ export default function Home() {
     }
   }, [user, authLoading, router]);
 
-
-  useEffect(() => {
-    Promise.all([getTournaments(), getTransactions()]).then(([tournaments, transactions]) => {
+  const fetchAndSetData = () => {
+    Promise.all([getTournaments(), getTransactions(user?.email)]).then(([tournaments, userTransactions]) => {
       setTournaments(tournaments);
-      setTransactions(transactions);
+      setTransactions(userTransactions);
       setLoading(false);
     });
-  }, []);
+  }
+
+  useEffect(() => {
+    if(user) {
+      fetchAndSetData();
+    }
+  }, [user]);
 
   const searchParams = useSearchParams();
   const tournamentId = searchParams.get('tournamentId');
@@ -59,13 +65,15 @@ export default function Home() {
     }
 
     const newTransaction: Transaction = {
-      id: `t${transactions.length + 1}`,
+      id: `t-${Date.now()}`,
       date: new Date().toISOString(),
       description: `Entry for ${tournament.title}`,
       amount: tournament.entryFee,
       type: 'debit',
+      userId: user!.email,
     };
     if (!isAdmin) {
+      addTransaction(newTransaction);
       setTransactions([newTransaction, ...transactions]);
     }
     toast({
@@ -75,6 +83,8 @@ export default function Home() {
   };
 
   const handleWalletAction = (type: 'credit' | 'debit', amount: number, upiId?: string, screenshot?: File) => {
+    if (!user) return;
+
     if (type === 'debit') {
       if (amount > currentBalance && !isAdmin) {
         toast({
@@ -84,64 +94,47 @@ export default function Home() {
         });
         return;
       }
-      
-      const newTransaction: Transaction = {
-        id: `t${transactions.length + 1}`,
-        date: new Date().toISOString(),
-        description: `Redeemed to Admin`,
-        amount: amount,
-        type: 'debit',
-      };
-      if (!isAdmin) {
-          setTransactions([newTransaction, ...transactions]);
-      }
-
-      toast({
-        title: 'Redemption Request Sent',
-        description: `Your request to redeem ${amount.toLocaleString()} coins to ${upiId} has been sent for approval.`,
-      });
-      return;
     }
 
-    if (type === 'credit') {
-       const newTransaction: Transaction = {
-        id: `t${transactions.length + 1}`,
-        date: new Date().toISOString(),
-        description: 'Coins from Admin',
-        amount: amount,
-        type: 'credit',
-      };
-       if (!isAdmin) {
-          setTransactions([newTransaction, ...transactions]);
-       }
+    addCoinRequest({
+      userId: user.email,
+      type,
+      amount,
+      upiId,
+      screenshot: screenshot?.name,
+    });
 
-      toast({
-        title: 'Coin Request Approved',
-        description: `${amount.toLocaleString()} coins have been added to your wallet.`,
-      });
+    if (type === 'credit') {
+        toast({
+            title: 'Coin Request Sent',
+            description: `Your request to add ${amount.toLocaleString()} coins has been sent to the admin for approval.`,
+        });
+    } else {
+        toast({
+            title: 'Redemption Request Sent',
+            description: `Your request to redeem ${amount.toLocaleString()} coins to ${upiId} has been sent for approval.`,
+        });
     }
   };
 
   const handleDeclareWinner = (tournament: Tournament, winnerEmail: string, prizeAmount: number) => {
-    // In a real app, you'd find the user and add to their transactions.
-    // For this simulation, we'll just show a toast.
-    // If we were tracking all users' transactions, we would do something like:
-    // const winnerTransactions = getTransactionsForUser(winnerEmail);
-    // setTransactionsForUser(winnerEmail, [...winnerTransactions, newCreditTransaction]);
+    const newTransaction: Transaction = {
+        id: `t-win-${Date.now()}`,
+        date: new Date().toISOString(),
+        description: `Prize for ${tournament.title}`,
+        amount: prizeAmount,
+        type: 'credit',
+        userId: winnerEmail,
+    };
+    addTransaction(newTransaction);
 
     toast({
       title: 'Winner Declared!',
       description: `${winnerEmail} has been awarded ${prizeAmount.toLocaleString()} coins for winning ${tournament.title}.`,
     });
 
+    // If the winner is the current user, update their view
     if (user?.email === winnerEmail) {
-        const newTransaction: Transaction = {
-            id: `t-win-${transactions.length + 1}`,
-            date: new Date().toISOString(),
-            description: `Prize for ${tournament.title}`,
-            amount: prizeAmount,
-            type: 'credit',
-        };
         setTransactions([newTransaction, ...transactions]);
     }
   };
@@ -204,6 +197,7 @@ export default function Home() {
             <WalletHistory
               transactions={transactions}
               onWalletAction={handleWalletAction}
+              key={transactions.length} // Force re-render on transaction change
             />
           </aside>
         </div>
