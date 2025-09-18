@@ -131,7 +131,7 @@ export default function ProfilePage() {
       <main className="flex-1 p-4 sm:p-6 lg:p-8 flex flex-col items-center">
         <div className="w-full max-w-4xl space-y-8">
             <div className="text-center">
-                <h1 className="text-4xl font-bold text-glow-primary">Profile</h1>
+                <h1 className="text-4xl font-bold text-glow-primary">Profile & Create</h1>
             </div>
             
             <Card>

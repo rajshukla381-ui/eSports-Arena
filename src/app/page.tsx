@@ -10,27 +10,22 @@ import { getTournaments, getTransactions } from '@/lib/data';
 import type { Tournament, Transaction } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { user, loading } = useAuth();
   const router = useRouter();
 
 
   useEffect(() => {
-    if(!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
-
-
-  useEffect(() => {
-    getTournaments().then(setTournaments);
-    getTransactions().then(setTransactions);
+    Promise.all([getTournaments(), getTransactions()]).then(([tournaments, transactions]) => {
+      setTournaments(tournaments);
+      setTransactions(transactions);
+      setLoading(false);
+    });
   }, []);
 
   const searchParams = useSearchParams();
@@ -99,7 +94,7 @@ export default function Home() {
     }
   };
 
-  if (loading || !user) {
+  if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Header />

@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import { Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/hooks/use-auth';
 
 
 const spaceGrotesk = Space_Grotesk({
@@ -29,10 +28,8 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet" />
       </head>
       <body className={`${spaceGrotesk.variable} font-body antialiased`}>
-        <AuthProvider>
           {children}
           <Toaster />
-        </AuthProvider>
       </body>
     </html>
   );
