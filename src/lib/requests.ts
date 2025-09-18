@@ -1,5 +1,6 @@
 
 import { CoinRequest } from '@/lib/types';
+import { addNotification } from './notifications';
 
 let coinRequestsData: CoinRequest[] = [];
 
@@ -21,11 +22,25 @@ export const addCoinRequest = async (request: Omit<CoinRequest, 'id' | 'date' | 
 
 export const updateCoinRequestStatus = async (id: string, status: 'approved' | 'rejected'): Promise<CoinRequest | undefined> => {
     return new Promise(resolve => {
-        setTimeout(() => {
+        setTimeout(async () => {
             const requestIndex = coinRequestsData.findIndex(r => r.id === id);
             if (requestIndex > -1) {
-                coinRequestsData[requestIndex].status = status;
-                resolve(coinRequestsData[requestIndex]);
+                const request = coinRequestsData[requestIndex];
+                request.status = status;
+
+                let message = '';
+                if (status === 'approved') {
+                    message = `Your request for ${request.originalAmount || request.amount} coins has been approved.`;
+                } else {
+                    message = `Your request for ${request.originalAmount || request.amount} coins has been rejected.`;
+                }
+
+                await addNotification({
+                    userId: request.userId,
+                    message: message
+                });
+
+                resolve(request);
             } else {
                 resolve(undefined);
             }

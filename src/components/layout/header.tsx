@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Swords, User, Shield, LogOut, Ticket } from 'lucide-react';
+import { Swords, User, Shield, LogOut, Ticket, Bell } from 'lucide-react';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 import {
@@ -15,6 +15,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { placeholderImages } from '@/lib/placeholder-images.json';
 import { useAuth } from '@/hooks/use-auth';
+import { NotificationBell } from '../notifications/notification-bell';
 
 export function Header() {
   const userAvatar = placeholderImages.find(p => p.id === 'user-avatar');
@@ -35,6 +36,7 @@ export function Header() {
         <div className="flex flex-1 items-center justify-end gap-4">
           { user && (
             <>
+              <NotificationBell />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button

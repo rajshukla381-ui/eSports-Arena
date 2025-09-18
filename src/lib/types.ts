@@ -1,3 +1,4 @@
+
 export type Tournament = {
   id: string;
   title: string;
@@ -36,4 +37,11 @@ export type CoinRequest = {
   details?: string; // For storing '₹10 Google Play Code' etc.
 };
 
-    
+export type Notification = {
+    id: string;
+    userId: string;
+    date: string;
+    message: string;
+    isRead: boolean;
+    link?: string;
+};

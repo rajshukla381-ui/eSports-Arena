@@ -36,10 +36,7 @@ export default function AdminPage() {
     }, []);
 
     const handleRequest = async (request: CoinRequest, newStatus: 'approved' | 'rejected') => {
-        const originalRequestAmount = request.originalAmount || request.amount;
-
-        await updateCoinRequestStatus(request.id, newStatus);
-
+        
         if (newStatus === 'approved') {
             const description = request.redeemCode 
                 ? `Redeem Code: ${request.redeemCode}`
@@ -51,7 +48,7 @@ export default function AdminPage() {
             
             // For debits (withdrawals), the transaction amount debited from the user's wallet
             // should be the original requested amount before fees.
-            const transactionAmount = request.type === 'debit' ? originalRequestAmount : request.amount;
+            const transactionAmount = request.type === 'debit' ? request.originalAmount! : request.amount;
 
             await addTransaction({
                 userId: request.userId,
@@ -71,6 +68,9 @@ export default function AdminPage() {
                 description: `The coin request from ${request.userId} has been rejected.`
             });
         }
+        
+        // This needs to be called AFTER addTransaction and toast so the notification is created
+        await updateCoinRequestStatus(request.id, newStatus);
         
         setRequests(requests.filter(r => r.id !== request.id));
     };
@@ -200,5 +200,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    
