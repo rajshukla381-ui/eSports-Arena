@@ -117,8 +117,11 @@ export function WalletActionDialog({
                  )}
                  onClick={() => setSelectedPackage(pkg)}>
                 <Image src={pkg.imageUrl} alt={`${pkg.amount} coins`} width={100} height={100} className="mx-auto mb-2" data-ai-hint={pkg.imageHint} />
-                <div className="font-bold flex items-center justify-center gap-1 text-lg">
-                    <CircleDollarSign className="w-5 h-5 text-primary" /> {pkg.amount.toLocaleString()}
+                <div>
+                  <div className="font-bold flex items-center justify-center gap-1 text-lg">
+                      <CircleDollarSign className="w-5 h-5 text-primary" /> {pkg.amount.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground">₹{pkg.price.toLocaleString()}</div>
                 </div>
             </div>
         ))}
@@ -127,7 +130,7 @@ export function WalletActionDialog({
       {selectedPackage && (
         <div className="space-y-4 animate-in fade-in-0">
              <div className="bg-muted/50 p-4 rounded-md text-center space-y-2">
-                <Label>Pay to this UPI ID</Label>
+                <Label>Pay ₹{selectedPackage.price.toLocaleString()} to this UPI ID</Label>
                 <div className="flex items-center justify-center gap-2 p-2 bg-background rounded-md">
                     <p className="text-lg font-mono">{adminUpiId}</p>
                     <Button variant="ghost" size="icon" onClick={copyToClipboard}>
