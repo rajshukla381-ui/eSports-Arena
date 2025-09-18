@@ -48,7 +48,7 @@ export function WalletActionDialog({
   
   const { toast } = useToast();
   const adminUpiId = '9106059600@fam';
-  const [activeTab, setActiveTab] = useState('buy-coins');
+  const [activeTab, setActiveTab] = useState('buy-points');
 
 
   const handleRedeemCode = async () => {
@@ -86,7 +86,7 @@ export function WalletActionDialog({
   const handleConfirm = () => {
     if (action === 'credit') {
         if (!selectedPackage) {
-            toast({ variant: 'destructive', title: 'No Package Selected', description: 'Please select a coin package to continue.' });
+            toast({ variant: 'destructive', title: 'No Package Selected', description: 'Please select a point package to continue.' });
             return;
         }
 
@@ -111,7 +111,7 @@ export function WalletActionDialog({
     setScreenshot(null);
     setScreenshotName('');
     setSelectedPackage(null);
-    setActiveTab('buy-coins');
+    setActiveTab('buy-points');
     setRedeemCodeInput('');
   }
 
@@ -131,20 +131,20 @@ export function WalletActionDialog({
   const creditContent = (
     <>
         <DialogHeader>
-            <DialogTitle>Get Gaming Coins</DialogTitle>
+            <DialogTitle>Get Gaming Points</DialogTitle>
             <DialogDescription>
-            Choose how you want to add coins to your wallet.
+            Choose how you want to add points to your wallet.
             </DialogDescription>
         </DialogHeader>
        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="buy-coins"><CircleDollarSign className="w-4 h-4 mr-2"/>Buy Coins</TabsTrigger>
+                <TabsTrigger value="buy-points"><CircleDollarSign className="w-4 h-4 mr-2"/>Buy Points</TabsTrigger>
                 <TabsTrigger value="redeem-code"><Gift className="w-4 h-4 mr-2"/>Redeem Code</TabsTrigger>
             </TabsList>
-            <TabsContent value="buy-coins">
+            <TabsContent value="buy-points">
                 <div className="py-4 space-y-4">
                     <p className="text-sm text-muted-foreground px-1">
-                        Select a coin package to get started.
+                        Select a point package to get started.
                     </p>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[200px] overflow-y-auto pr-2">
                         {coinPackages.map(pkg => (
@@ -154,7 +154,7 @@ export function WalletActionDialog({
                                     selectedPackage?.id === pkg.id ? 'border-primary shadow-glow-primary' : 'border-transparent'
                                 )}
                                 onClick={() => setSelectedPackage(pkg)}>
-                                <Image src={pkg.imageUrl} alt={`${pkg.amount} coins`} width={100} height={100} className="mx-auto mb-2" data-ai-hint={pkg.imageHint} />
+                                <Image src={pkg.imageUrl} alt={`${pkg.amount} points`} width={100} height={100} className="mx-auto mb-2" data-ai-hint={pkg.imageHint} />
                                 <div>
                                 <div className="font-bold flex items-center justify-center gap-1 text-lg">
                                     <CircleDollarSign className="w-5 h-5 text-primary" /> {pkg.amount.toLocaleString()}
@@ -209,7 +209,7 @@ export function WalletActionDialog({
                         onChange={(e) => setRedeemCodeInput(e.target.value)}
                         placeholder="e.g., WINNER123"
                     />
-                    <p className="text-xs text-muted-foreground">Enter "WINNER123" to get 500 bonus coins!</p>
+                    <p className="text-xs text-muted-foreground">Enter "WINNER123" to get 500 bonus points!</p>
                 </div>
                 <DialogFooter>
                     <DialogClose asChild>

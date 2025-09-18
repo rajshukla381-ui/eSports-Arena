@@ -57,28 +57,7 @@ export default function Home() {
 
   const handleJoinTournament = async (tournament: Tournament) => {
     if (!user) return;
-    if (!isAdmin && currentBalance < tournament.entryFee) {
-      toast({
-        variant: 'destructive',
-        title: 'Insufficient Coins',
-        description: `You need at least ${tournament.entryFee} coins to join.`,
-      });
-      return;
-    }
-
-    const newTransaction: Transaction = {
-      id: `t-${Date.now()}`,
-      date: new Date().toISOString(),
-      description: `Entry for ${tournament.title}`,
-      amount: tournament.entryFee,
-      type: 'debit',
-      userId: user.email,
-    };
-    if (!isAdmin) {
-      addTransaction(newTransaction);
-      setTransactions([newTransaction, ...transactions]);
-    }
-
+    
     await addNotification({
         userId: user.email,
         message: `You have successfully joined the tournament: "${tournament.title}". Good luck!`,
@@ -100,8 +79,8 @@ export default function Home() {
 
     if (request.type === 'credit') {
         toast({
-            title: 'Coin Request Sent',
-            description: `Your request to add ${request.amount.toLocaleString()} coins has been sent to the admin for approval.`,
+            title: 'Request Sent',
+            description: `Your request for ${request.amount.toLocaleString()} Points has been sent to the admin for approval.`,
         });
     }
   };
@@ -129,12 +108,12 @@ export default function Home() {
 
     await addNotification({
         userId: winnerEmail,
-        message: `Congratulations! You won ${prizeAmount.toLocaleString()} coins for winning the tournament: "${tournament.title}".`,
+        message: `Congratulations! You won ${prizeAmount.toLocaleString()} points for winning the tournament: "${tournament.title}".`,
     });
 
     toast({
       title: 'Winner Declared!',
-      description: `${winnerEmail} has been awarded ${prizeAmount.toLocaleString()} coins for winning ${tournament.title}.`,
+      description: `${winnerEmail} has been awarded ${prizeAmount.toLocaleString()} points for winning ${tournament.title}.`,
     });
 
     // If the winner is the current user, update their view

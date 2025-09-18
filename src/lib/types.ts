@@ -28,12 +28,24 @@ export type CoinRequest = {
   userId: string;
   date: string;
   type: 'credit' | 'tournament_creation';
-  amount: number; // Final amount after deductions for debits (INR), or coin amount for credits
-  originalAmount?: number; // Original coin amount before deductions for debits
+  amount: number;
+  originalAmount?: number; 
   status: 'pending' | 'approved' | 'rejected';
-  screenshot?: string; // For simulation, we'll just store a name
+  screenshot?: string; 
   redeemCode?: string;
   tournamentDetails?: Omit<Tournament, 'id' | 'status' | 'imageUrl' | 'imageHint'>;
+  details?: {
+    upiId?: string;
+    finalAmount?: number;
+    gst?: number;
+    platformFee?: number;
+    redeemOption?: 'upi' | 'google_play';
+    googlePlayPackage?: {
+        name: string;
+        coins: number;
+    },
+    sentRedeemCode?: string;
+  }
 };
 
 export type Notification = {

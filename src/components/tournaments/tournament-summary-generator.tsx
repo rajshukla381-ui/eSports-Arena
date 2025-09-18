@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -25,7 +26,6 @@ export default function TournamentSummaryGenerator({
       const result = await generateTournamentSummary({
         title: tournament.title,
         gameName: tournament.gameName,
-        entryFee: tournament.entryFee,
         prizePool: tournament.prizePool,
         host: tournament.host,
         rules: tournament.rules,

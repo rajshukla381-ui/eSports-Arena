@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -14,7 +15,6 @@ import {z} from 'genkit';
 const GenerateTournamentSummaryInputSchema = z.object({
   title: z.string().describe('The title of the tournament.'),
   gameName: z.string().describe('The name of the game being played in the tournament (e.g., Free Fire, BGMI).'),
-  entryFee: z.number().describe('The entry fee for the tournament.'),
   prizePool: z.number().describe('The total prize pool for the tournament.'),
   host: z.string().describe('The host of the tournament.'),
   rules: z.string().describe('The rules of the tournament.'),
@@ -45,12 +45,11 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateTournamentSummaryOutputSchema},
   prompt: `You are an AI assistant that generates concise summaries of esports tournaments.
 
-  Given the following tournament details, create a brief and engaging summary that highlights the key information for potential players:
+  Given the following tournament details, create a brief and engaging summary that highlights the key information for potential players. The tournament is free to join.
 
   Tournament Title: {{{title}}}
   Game: {{{gameName}}}
-  Entry Fee: {{{entryFee}}}
-  Prize Pool: {{{prizePool}}}
+  Prize Pool: {{{prizePool}}} Points
   Host: {{{host}}}
   Match Time: {{{matchTime}}}
   Rules: {{{rules}}}

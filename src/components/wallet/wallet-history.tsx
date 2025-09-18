@@ -44,7 +44,7 @@ export default function WalletHistory({ transactions, onWalletAction, onRedeemCo
             {isAdmin ? (
                 <Infinity className="w-8 h-8" />
             ) : (
-                <p>{currentBalance.toLocaleString()} <span className="text-lg text-muted-foreground">Coins</span></p>
+                <p>{currentBalance.toLocaleString()} <span className="text-lg text-muted-foreground">Points</span></p>
             )}
           </div>
         </div>
@@ -56,7 +56,7 @@ export default function WalletHistory({ transactions, onWalletAction, onRedeemCo
             onConfirm={(request) => onWalletAction(request)}
             onRedeemCode={onRedeemCode}
           >
-            <Button className="w-full">Get Coins</Button>
+            <Button className="w-full">Get Points</Button>
           </WalletActionDialog>
         </div>
         <h3 className="font-semibold pt-4">Transaction History</h3>

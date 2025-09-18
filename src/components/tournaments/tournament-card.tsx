@@ -61,9 +61,7 @@ export default function TournamentCard({
                 {tournament.prizePool.toLocaleString()}
             </p>
             </div>
-            <Badge variant="secondary" className="flex items-center gap-1">
-                Entry: <CircleDollarSign className="w-3 h-3"/>{tournament.entryFee.toLocaleString()}
-            </Badge>
+            <Badge variant="secondary">Free to Join</Badge>
         </div>
         <Button size="sm" className="w-full font-bold" onClick={handleJoinClick}>
             Join

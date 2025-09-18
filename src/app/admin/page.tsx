@@ -22,6 +22,19 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { placeholderImages } from '@/lib/placeholder-images.json';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 
 export default function AdminPage() {
@@ -36,13 +49,9 @@ export default function AdminPage() {
         fetchRequests();
     }, []);
 
-    const handleRequest = async (request: CoinRequest, newStatus: 'approved' | 'rejected') => {
+    const handleRequest = async (request: CoinRequest, newStatus: 'approved' | 'rejected', sentRedeemCode?: string) => {
         
         if (newStatus === 'approved') {
-            let description = '';
-            let transactionAmount = 0;
-            let transactionType: 'credit' | 'tournament_creation' = request.type;
-
             if (request.type === 'tournament_creation') {
                  const ffBanner = placeholderImages.find(p => p.id === 'game-ff');
                 const bgmiBanner = placeholderImages.find(p => p.id === 'game-bgmi');
@@ -73,25 +82,17 @@ export default function AdminPage() {
                 };
                 await addTournament(newTournament);
                 
-                await addTransaction({
-                    userId: request.userId,
-                    date: new Date().toISOString(),
-                    description: `Creation fee for ${request.tournamentDetails!.title}`,
-                    amount: request.amount,
-                    type: 'debit',
-                });
-                
                 toast({
                     title: 'Tournament Approved',
-                    description: `${request.tournamentDetails!.title} is now live and ${request.amount.toLocaleString()} coins have been debited from ${request.userId}.`
+                    description: `${request.tournamentDetails!.title} is now live.`
                 });
 
             } else {
-                 description = request.redeemCode 
+                 const description = request.redeemCode 
                     ? `Redeem Code: ${request.redeemCode}`
-                    : 'Coins from Admin';
+                    : 'Points from Admin';
                 
-                transactionAmount = request.amount;
+                const transactionAmount = request.amount;
 
                 await addTransaction({
                     userId: request.userId,
@@ -103,17 +104,17 @@ export default function AdminPage() {
 
                  toast({
                     title: 'Request Approved',
-                    description: `A transaction for ${transactionAmount.toLocaleString()} coins has been created for ${request.userId}.`
+                    description: `A transaction for ${transactionAmount.toLocaleString()} points has been created for ${request.userId}.`
                 });
             }
         } else {
              toast({
                 title: 'Request Rejected',
-                description: `The coin request from ${request.userId} has been rejected.`
+                description: `The request from ${request.userId} has been rejected.`
             });
         }
         
-        await updateCoinRequestStatus(request.id, newStatus);
+        await updateCoinRequestStatus(request.id, newStatus, sentRedeemCode);
         
         setRequests(requests.filter(r => r.id !== request.id));
     };
@@ -137,7 +138,7 @@ export default function AdminPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Pending Requests</CardTitle>
-                    <CardDescription>Approve or reject coin and tournament creation requests from users.</CardDescription>
+                    <CardDescription>Approve or reject point and tournament creation requests from users.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -184,13 +185,17 @@ export default function AdminPage() {
                                 </TableCell>
                                 <TableCell>{format(new Date(request.date), 'PPp')}</TableCell>
                                 <TableCell className="text-right space-x-2">
-                                    <Button 
-                                        size="icon" 
-                                        variant="ghost" 
-                                        className="text-green-500" 
-                                        onClick={() => handleRequest(request, 'approved')}>
-                                        <Check className="w-5 h-5" />
-                                    </Button>
+                                     {request.details?.redeemOption === 'google_play' ? (
+                                        <SendCodeDialog request={request} onConfirm={handleRequest} />
+                                    ) : (
+                                        <Button 
+                                            size="icon" 
+                                            variant="ghost" 
+                                            className="text-green-500" 
+                                            onClick={() => handleRequest(request, 'approved')}>
+                                            <Check className="w-5 h-5" />
+                                        </Button>
+                                    )}
                                     <Button size="icon" variant="ghost" className="text-red-500" onClick={() => handleRequest(request, 'rejected')}>
                                         <XIcon className="w-5 h-5" />
                                     </Button>
@@ -212,4 +217,49 @@ export default function AdminPage() {
       </main>
     </div>
   );
+}
+
+
+function SendCodeDialog({ request, onConfirm }: { request: CoinRequest, onConfirm: (request: CoinRequest, status: 'approved' | 'rejected', code?: string) => void }) {
+    const [open, setOpen] = useState(false);
+    const [code, setCode] = useState('');
+    const { toast } = useToast();
+
+    const handleConfirm = () => {
+        if (!code.trim()) {
+            toast({ variant: 'destructive', title: 'Invalid Code', description: 'Please enter a valid Google Play redeem code.' });
+            return;
+        }
+        onConfirm(request, 'approved', code);
+        setOpen(false);
+        setCode('');
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button size="icon" variant="ghost" className="text-green-500">
+                    <Check className="w-5 h-5" />
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                 <DialogHeader>
+                    <DialogTitle>Send Google Play Redeem Code</DialogTitle>
+                    <DialogDescription>
+                        Approve the request for a {request.details?.googlePlayPackage?.name} and send the code to the user.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <Label htmlFor="redeemCode">Redeem Code</Label>
+                    <Textarea id="redeemCode" value={code} onChange={e => setCode(e.target.value)} placeholder="Enter Google Play code here..." />
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                    </DialogClose>
+                    <Button onClick={handleConfirm}>Approve & Send Code</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
 }

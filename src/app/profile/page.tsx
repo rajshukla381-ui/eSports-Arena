@@ -37,27 +37,22 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [gameName, setGameName] = useState<'Free Fire' | 'BGMI' | 'Valorant' | ''>('');
-  const [entryFee, setEntryFee] = useState('');
   const [prizePool, setPrizePool] = useState('');
   const [host, setHost] = useState('');
   const [rules, setRules] = useState('');
   const [matchTime, setMatchTime] = useState('');
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
   useEffect(() => {
     // Set initial match time only on the client to avoid hydration mismatch
-    setMatchTime(new Date().toISOString().slice(0, 16));
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    setMatchTime(now.toISOString().slice(0, 16));
   }, []);
-
-  const feePercentage = 0.20;
-  const prizePoolAmount = parseInt(prizePool) || 0;
-  const feeAmount = prizePoolAmount * feePercentage;
-  const totalAmount = prizePoolAmount + feeAmount;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title || !gameName || !entryFee || !prizePool || !host || !rules || !matchTime) {
+    if (!title || !gameName || !prizePool || !host || !rules || !matchTime) {
       toast({
         variant: 'destructive',
         title: 'Missing Fields',
@@ -65,18 +60,12 @@ export default function ProfilePage() {
       });
       return;
     }
-    setShowPaymentDialog(true);
-  };
-  
-  const handlePaymentConfirm = async () => {
+    
     if (!user || !gameName) return;
 
-    setShowPaymentDialog(false);
-
-    const tournamentDetails: Omit<Tournament, 'id' | 'status' | 'imageUrl' | 'imageHint'> = {
+    const tournamentDetails: Omit<Tournament, 'id' | 'status' | 'imageUrl' | 'imageHint' | 'entryFee'> = {
       title,
       gameName,
-      entryFee: parseInt(entryFee),
       prizePool: parseInt(prizePool),
       host,
       rules,
@@ -86,23 +75,27 @@ export default function ProfilePage() {
     await addCoinRequest({
       userId: user.email,
       type: 'tournament_creation',
-      amount: totalAmount,
-      tournamentDetails: tournamentDetails,
+      amount: 0, // No cost to create a tournament
+      tournamentDetails: {
+        ...tournamentDetails,
+        entryFee: 0 // Tournaments are free to join
+      },
     });
     
     toast({
       title: 'Tournament Request Sent!',
-      description: `Your tournament "${title}" has been submitted for admin approval. ${totalAmount.toLocaleString()} coins will be deducted from your wallet upon approval.`,
+      description: `Your tournament "${title}" has been submitted for admin approval.`,
     });
 
     // Reset form
     setTitle('');
     setGameName('');
-    setEntryFee('');
     setPrizePool('');
     setHost('');
     setRules('');
-    setMatchTime(new Date().toISOString().slice(0, 16));
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    setMatchTime(now.toISOString().slice(0, 16));
   };
   
   return (
@@ -117,7 +110,7 @@ export default function ProfilePage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Create New Tournament</CardTitle>
-                    <CardDescription>Fill in the details below to host your own tournament. You will be required to provide the prize pool amount in coins, plus a 20% service fee.</CardDescription>
+                    <CardDescription>Fill in the details below to host your own tournament. All tournaments are free to join and winnings are distributed as points.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-6">
@@ -140,18 +133,14 @@ export default function ProfilePage() {
                         </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="entryFee">Entry Fee (Coins)</Label>
-                            <Input id="entryFee" type="number" value={entryFee} onChange={(e) => setEntryFee(e.target.value)} placeholder="e.g., 100" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="prizePool">Prize Pool (Coins)</Label>
+                            <Label htmlFor="prizePool">Prize Pool (Points)</Label>
                             <Input id="prizePool" type="number" value={prizePool} onChange={(e) => setPrizePool(e.target.value)} placeholder="e.g., 10000" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="host">Host</Label>
                             <Input id="host" value={host} onChange={(e) => setHost(e.target.value)} placeholder="e.g., Your Org Name" />
                         </div>
-                         <div className="space-y-2">
+                         <div className="space-y-2 md:col-span-2">
                             <Label htmlFor="matchTime">Match Time</Label>
                             <Input id="matchTime" type="datetime-local" value={matchTime} onChange={(e) => setMatchTime(e.target.value)} />
                         </div>
@@ -190,31 +179,6 @@ export default function ProfilePage() {
             </Card>
         </div>
       </main>
-
-       <AlertDialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Coin Payment Required</AlertDialogTitle>
-            <AlertDialogDescription>
-              To create your tournament, you need to provide the prize pool and a service fee in coins. This amount will be deducted from your wallet after admin approval.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-4">
-              <div className="text-sm">
-                  <div className="flex justify-between items-center"><span>Prize Pool:</span> <span className="flex items-center gap-1"><CircleDollarSign className="w-4 h-4"/>{prizePoolAmount.toLocaleString()}</span></div>
-                  <div className="flex justify-between items-center"><span>Service Fee (20%):</span> <span className="flex items-center gap-1"><CircleDollarSign className="w-4 h-4"/>{feeAmount.toLocaleString()}</span></div>
-                  <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>Total Cost:</span> <span className="flex items-center gap-1"><CircleDollarSign className="w-4 h-4"/>{totalAmount.toLocaleString()}</span></div>
-              </div>
-              <div className="bg-muted/50 p-4 rounded-md text-center space-y-2">
-                <Label>This amount will be deducted from your wallet for admin approval.</Label>
-              </div>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handlePaymentConfirm}>Confirm & Create</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

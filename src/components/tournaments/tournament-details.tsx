@@ -57,9 +57,9 @@ export default function TournamentDetails({ tournament, onJoin, isAdmin, onDecla
         </div>
       </CardHeader>
       <CardContent className="p-6 space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
             <InfoChip icon={CircleDollarSign} label="Prize Pool" value={`${tournament.prizePool.toLocaleString()}`} accent />
-            <InfoChip icon={Users} label="Entry Fee" value={`${tournament.entryFee.toLocaleString()}`} />
+            <InfoChip icon={Users} label="Entry" value="Free" />
             <InfoChip icon={Calendar} label="Date" value={format(new Date(tournament.matchTime), "MMM dd")} />
             <InfoChip icon={Clock} label="Time" value={format(new Date(tournament.matchTime), "h:mm a")} />
         </div>
@@ -90,7 +90,7 @@ const InfoChip = ({ icon: Icon, label, value, accent=false }: { icon: React.Elem
         <Icon className={cn("mx-auto h-6 w-6 mb-1", accent ? "text-accent" : "text-primary")} />
         <p className="text-xs text-muted-foreground">{label}</p>
         <p className={cn("font-bold flex items-center justify-center gap-1", accent && "text-accent")}>
-          { (label === 'Prize Pool' || label === 'Entry Fee') && <CircleDollarSign className="w-4 h-4"/>}
+          { (label === 'Prize Pool') && <CircleDollarSign className="w-4 h-4"/>}
           {value}
         </p>
     </div>
@@ -127,7 +127,7 @@ function DeclareWinnerDialog({ tournament, onDeclareWinner }: { tournament: Tour
                  <DialogHeader>
                     <DialogTitle>Declare Winner for {tournament.title}</DialogTitle>
                     <DialogDescription>
-                        Enter the winner's email and the prize amount. The coins will be credited to the winner.
+                        Enter the winner's email and the prize amount. The points will be credited to the winner.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -136,7 +136,7 @@ function DeclareWinnerDialog({ tournament, onDeclareWinner }: { tournament: Tour
                         <Input id="winnerEmail" type="email" value={winnerEmail} onChange={e => setWinnerEmail(e.target.value)} className="col-span-3" placeholder="winner@example.com" />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="prizeAmount" className="text-right">Prize (Coins)</Label>
+                        <Label htmlFor="prizeAmount" className="text-right">Prize (Points)</Label>
                         <Input id="prizeAmount" type="number" value={prizeAmount} onChange={e => setPrizeAmount(e.target.value)} className="col-span-3" />
                     </div>
                 </div>
