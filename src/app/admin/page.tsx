@@ -11,7 +11,7 @@ import { getCoinRequests, updateCoinRequestStatus } from '@/lib/requests';
 import { addTransaction, addTournament } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { ArrowUpRight, Check, XIcon, Copy, Gift, CircleDollarSign, Trophy } from 'lucide-react';
+import { ArrowUpRight, Check, XIcon, Copy, Gift, CircleDollarSign, Trophy, ArrowDownLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -87,7 +87,7 @@ export default function AdminPage() {
                     description: `${request.tournamentDetails!.title} is now live.`
                 });
 
-            } else {
+            } else if (request.type === 'credit') {
                  const description = request.redeemCode 
                     ? `Redeem Code: ${request.redeemCode}`
                     : 'Points from Admin';
@@ -106,8 +106,13 @@ export default function AdminPage() {
                     title: 'Request Approved',
                     description: `A transaction for ${transactionAmount.toLocaleString()} points has been created for ${request.userId}.`
                 });
+            } else if (request.type === 'debit') {
+                 toast({
+                    title: 'Withdrawal Approved',
+                    description: `The withdrawal request from ${request.userId} has been approved.`
+                });
             }
-        } else {
+        } else { // Rejected
              toast({
                 title: 'Request Rejected',
                 description: `The request from ${request.userId} has been rejected.`
@@ -122,6 +127,32 @@ export default function AdminPage() {
     const copyToClipboard = (text: string, label: string) => {
         navigator.clipboard.writeText(text);
         toast({ title: 'Copied!', description: `${label} copied to clipboard.` });
+    }
+
+    const renderTypeBadge = (request: CoinRequest) => {
+        switch(request.type) {
+            case 'credit':
+                return (
+                    <Badge variant="secondary">
+                        {request.redeemCode ? <Gift className="w-4 h-4 mr-1"/> : <ArrowUpRight className="w-4 h-4 mr-1" />}
+                        {request.redeemCode ? 'Redeem' : 'Credit'}
+                    </Badge>
+                );
+            case 'debit':
+                 return (
+                    <Badge variant="destructive">
+                        <ArrowDownLeft className="w-4 h-4 mr-1"/>
+                        Withdraw
+                    </Badge>
+                );
+            case 'tournament_creation':
+                return (
+                    <Badge variant="default">
+                        <Trophy className="w-4 h-4 mr-1" />
+                        Tournament
+                    </Badge>
+                );
+        }
     }
 
 
@@ -157,10 +188,7 @@ export default function AdminPage() {
                             <TableRow key={request.id}>
                                 <TableCell>{request.userId}</TableCell>
                                 <TableCell>
-                                    <Badge variant={request.type === 'credit' ? 'secondary' : 'default'}>
-                                        {request.type === 'credit' && request.redeemCode ? <Gift className="w-4 h-4 mr-1"/> : request.type === 'credit' ? <ArrowUpRight className="w-4 h-4 mr-1"/> : <Trophy className="w-4 h-4 mr-1" />}
-                                        {request.redeemCode ? 'Redeem' : request.type.replace('_', ' ')}
-                                    </Badge>
+                                    {renderTypeBadge(request)}
                                 </TableCell>
                                 <TableCell>
                                      <div className="flex flex-col">
@@ -182,10 +210,12 @@ export default function AdminPage() {
                                     {request.type === 'tournament_creation' && request.tournamentDetails && (
                                         <span>{request.tournamentDetails.title}</span>
                                     )}
+                                    {request.type === 'debit' && request.details?.redeemOption === 'upi' && `UPI: ${request.details.upiId}`}
+                                    {request.type === 'debit' && request.details?.redeemOption === 'google_play' && `GPlay: ${request.details.googlePlayPackage?.name}`}
                                 </TableCell>
                                 <TableCell>{format(new Date(request.date), 'PPp')}</TableCell>
                                 <TableCell className="text-right space-x-2">
-                                     {request.details?.redeemOption === 'google_play' ? (
+                                     {request.type === 'debit' && request.details?.redeemOption === 'google_play' ? (
                                         <SendCodeDialog request={request} onConfirm={handleRequest} />
                                     ) : (
                                         <Button 

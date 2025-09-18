@@ -1,6 +1,7 @@
 
 import { CoinRequest } from '@/lib/types';
 import { addNotification } from './notifications';
+import { addTransaction } from './data';
 
 let coinRequestsData: CoinRequest[] = [];
 
@@ -17,10 +18,22 @@ export const addCoinRequest = async (request: Omit<CoinRequest, 'id' | 'date' | 
         status: 'pending'
     };
     coinRequestsData.unshift(newRequest);
+    
+    // If it's a withdrawal request, immediately create a pending debit transaction
+    if (newRequest.type === 'debit') {
+        await addTransaction({
+            userId: newRequest.userId,
+            date: new Date().toISOString(),
+            description: `Withdrawal Request (Pending)`,
+            amount: newRequest.amount,
+            type: 'debit'
+        });
+    }
+
     return new Promise(resolve => setTimeout(() => resolve(newRequest), 50));
 }
 
-export const updateCoinRequestStatus = async (id: string, status: 'approved' | 'rejected', redeemCode?: string): Promise<CoinRequest | undefined> => {
+export const updateCoinRequestStatus = async (id: string, status: 'approved' | 'rejected', sentRedeemCode?: string): Promise<CoinRequest | undefined> => {
     return new Promise(resolve => {
         setTimeout(async () => {
             const requestIndex = coinRequestsData.findIndex(r => r.id === id);
@@ -32,14 +45,31 @@ export const updateCoinRequestStatus = async (id: string, status: 'approved' | '
                 if (status === 'approved') {
                     if (request.type === 'tournament_creation') {
                         message = `Your tournament "${request.tournamentDetails?.title}" has been approved and is now live!`;
-                    } else {
+                    } else if (request.type === 'credit') {
                         message = `Your request for ${request.amount.toLocaleString()} coins has been approved.`;
+                    } else if (request.type === 'debit') {
+                         if (request.details?.redeemOption === 'google_play' && sentRedeemCode) {
+                            request.details.sentRedeemCode = sentRedeemCode;
+                            message = `Your withdrawal request for a ${request.details.googlePlayPackage?.name} has been approved! Your code is: ${sentRedeemCode}`;
+                         } else {
+                            message = `Your withdrawal request for ${request.amount.toLocaleString()} coins has been approved and processed.`;
+                         }
                     }
-                } else {
+                } else { // Rejected
                      if (request.type === 'tournament_creation') {
                         message = `Your tournament "${request.tournamentDetails?.title}" has been rejected.`;
-                    } else {
+                    } else if (request.type === 'credit') {
                         message = `Your request for ${request.amount.toLocaleString()} coins has been rejected.`;
+                    } else if (request.type === 'debit') {
+                        message = `Your withdrawal request for ${request.amount.toLocaleString()} coins has been rejected.`;
+                        // Refund the points
+                        await addTransaction({
+                            userId: request.userId,
+                            date: new Date().toISOString(),
+                            description: `Withdrawal Request Rejected (Refund)`,
+                            amount: request.amount,
+                            type: 'credit'
+                        });
                     }
                 }
 

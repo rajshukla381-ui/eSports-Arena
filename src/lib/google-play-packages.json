@@ -1,0 +1,11 @@
+
+{
+    "googlePlayPackages": [
+        { "id": "gp-10", "name": "₹10 Google Play Code", "coins": 10 },
+        { "id": "gp-20", "name": "₹20 Google Play Code", "coins": 20 },
+        { "id": "gp-50", "name": "₹50 Google Play Code", "coins": 50 },
+        { "id": "gp-100", "name": "₹100 Google Play Code", "coins": 100 },
+        { "id": "gp-250", "name": "₹250 Google Play Code", "coins": 250 },
+        { "id": "gp-500", "name": "₹500 Google Play Code", "coins": 500 }
+    ]
+}

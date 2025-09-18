@@ -17,6 +17,7 @@ import { ArrowDownLeft, ArrowUpRight, CircleDollarSign, Infinity } from 'lucide-
 import { Button } from '../ui/button';
 import { WalletActionDialog } from './wallet-action-dialog';
 import { useAuth } from '@/hooks/use-auth';
+import { WithdrawDialog } from './withdraw-dialog';
 
 type WalletHistoryProps = {
   transactions: Transaction[];
@@ -50,7 +51,7 @@ export default function WalletHistory({ transactions, onWalletAction, onRedeemCo
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4">
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <WalletActionDialog
             action="credit"
             onConfirm={(request) => onWalletAction(request)}
@@ -58,6 +59,12 @@ export default function WalletHistory({ transactions, onWalletAction, onRedeemCo
           >
             <Button className="w-full">Get Points</Button>
           </WalletActionDialog>
+           <WithdrawDialog 
+                currentBalance={currentBalance}
+                onConfirm={(request) => onWalletAction(request)}
+           >
+              <Button variant="outline" className="w-full">Withdraw Points</Button>
+           </WithdrawDialog>
         </div>
         <h3 className="font-semibold pt-4">Transaction History</h3>
         <div className="flex-1 overflow-auto">

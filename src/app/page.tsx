@@ -83,6 +83,11 @@ export default function Home() {
             title: 'Request Sent',
             description: `Your request for ${request.amount.toLocaleString()} Points has been sent to the admin for approval.`,
         });
+    } else if (request.type === 'debit') {
+        toast({
+            title: 'Request Sent',
+            description: `Your withdrawal request for ${request.amount.toLocaleString()} Points has been sent to the admin for approval.`,
+        });
     }
   };
 

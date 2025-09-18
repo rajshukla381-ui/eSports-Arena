@@ -27,7 +27,7 @@ export type CoinRequest = {
   id: string;
   userId: string;
   date: string;
-  type: 'credit' | 'tournament_creation';
+  type: 'credit' | 'tournament_creation' | 'debit';
   amount: number;
   originalAmount?: number; 
   status: 'pending' | 'approved' | 'rejected';
