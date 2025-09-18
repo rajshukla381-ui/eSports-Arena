@@ -12,6 +12,7 @@ import { Transaction } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { addNotification } from '@/lib/notifications';
 
 const LAST_SPIN_KEY = 'last_spin_date';
 
@@ -49,7 +50,7 @@ export default function SpinPage() {
     }
   }, [user]);
 
-  const handleSpinFinish = (prize: number) => {
+  const handleSpinFinish = async (prize: number) => {
     if (!user) return;
 
     setIsSpinning(false);
@@ -63,6 +64,12 @@ export default function SpinPage() {
             type: 'credit',
         };
         addTransaction(newTransaction);
+        
+        await addNotification({
+            userId: user.email,
+            message: `You won ${prize.toLocaleString()} coins from the daily spin! It has been added to your wallet.`,
+        });
+
         toast({
             title: 'Congratulations!',
             description: `You won ${prize.toLocaleString()} coins! It has been added to your wallet.`,

@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
+import { addNotification } from '@/lib/notifications';
 
 export default function Home() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -54,7 +55,8 @@ export default function Home() {
     return t.type === 'credit' ? acc + t.amount : acc - t.amount;
   }, 0);
 
-  const handleJoinTournament = (tournament: Tournament) => {
+  const handleJoinTournament = async (tournament: Tournament) => {
+    if (!user) return;
     if (!isAdmin && currentBalance < tournament.entryFee) {
       toast({
         variant: 'destructive',
@@ -70,12 +72,18 @@ export default function Home() {
       description: `Entry for ${tournament.title}`,
       amount: tournament.entryFee,
       type: 'debit',
-      userId: user!.email,
+      userId: user.email,
     };
     if (!isAdmin) {
       addTransaction(newTransaction);
       setTransactions([newTransaction, ...transactions]);
     }
+
+    await addNotification({
+        userId: user.email,
+        message: `You have successfully joined the tournament: "${tournament.title}". Good luck!`,
+    });
+
     toast({
       title: 'Tournament Joined!',
       description: `Successfully joined ${tournament.title}. Good luck!`,
@@ -125,7 +133,7 @@ export default function Home() {
       });
   }
 
-  const handleDeclareWinner = (tournament: Tournament, winnerEmail: string, prizeAmount: number) => {
+  const handleDeclareWinner = async (tournament: Tournament, winnerEmail: string, prizeAmount: number) => {
     const newTransaction: Transaction = {
         id: `t-win-${Date.now()}`,
         date: new Date().toISOString(),
@@ -135,6 +143,11 @@ export default function Home() {
         userId: winnerEmail,
     };
     addTransaction(newTransaction);
+
+    await addNotification({
+        userId: winnerEmail,
+        message: `Congratulations! You won ${prizeAmount.toLocaleString()} coins for winning the tournament: "${tournament.title}".`,
+    });
 
     toast({
       title: 'Winner Declared!',
