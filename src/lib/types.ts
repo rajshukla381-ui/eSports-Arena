@@ -12,6 +12,10 @@ export type Tournament = {
   status: 'Upcoming' | 'Live' | 'Completed';
   imageUrl: string;
   imageHint: string;
+  roomDetails?: {
+    id: string;
+    pass: string;
+  };
 };
 
 export type Transaction = {

@@ -77,6 +77,10 @@ export const getTournaments = async (): Promise<Tournament[]> => {
   return new Promise(resolve => setTimeout(() => resolve([...tournamentsData]), 50));
 };
 
+export const getTournamentById = async (id: string): Promise<Tournament | undefined> => {
+    return new Promise(resolve => setTimeout(() => resolve(tournamentsData.find(t => t.id === id)), 50));
+}
+
 export const addTournament = async (tournament: Omit<Tournament, 'id'>): Promise<Tournament> => {
     const newTournament = { ...tournament, id: `${Date.now()}` };
     tournamentsData.unshift(newTournament);
@@ -126,3 +130,16 @@ export const addTournamentParticipant = async (tournamentId: string, userId: str
     return new Promise(resolve => setTimeout(() => resolve(newParticipant), 50));
 }
     
+export const setTournamentRoomDetails = async (tournamentId: string, roomDetails: { id: string, pass: string }): Promise<Tournament | undefined> => {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            const tournamentIndex = tournamentsData.findIndex(t => t.id === tournamentId);
+            if (tournamentIndex > -1) {
+                tournamentsData[tournamentIndex].roomDetails = roomDetails;
+                resolve(tournamentsData[tournamentIndex]);
+            } else {
+                resolve(undefined);
+            }
+        }, 50)
+    });
+}

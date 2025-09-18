@@ -9,13 +9,11 @@ import AdBanner from '../ads/ad-banner';
 type TournamentListProps = {
   tournaments: Tournament[];
   activeTournamentId: string | null;
-  onJoin: (tournament: Tournament) => void;
 };
 
 export default function TournamentList({
   tournaments,
   activeTournamentId,
-  onJoin,
 }: TournamentListProps) {
   return (
     <Card className="h-full">
@@ -34,7 +32,6 @@ export default function TournamentList({
               <TournamentCard
                 tournament={tournament}
                 isActive={tournament.id === activeTournamentId}
-                onJoin={onJoin}
               />
             </Link>
           ))}

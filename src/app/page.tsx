@@ -72,6 +72,7 @@ export default function Home() {
     });
     // Re-fetch data to update participation status for chat
     fetchAndSetData();
+    router.push(`/tournaments/${tournament.id}`);
   };
 
   const handleWalletAction = (request: Omit<CoinRequest, 'id' | 'date' | 'status' | 'userId'>) => {
@@ -167,7 +168,6 @@ export default function Home() {
             <TournamentList
               tournaments={tournaments}
               activeTournamentId={selectedTournamentId}
-              onJoin={handleJoinTournament}
             />
           </aside>
           <section className="lg:col-span-8 xl:col-span-5">

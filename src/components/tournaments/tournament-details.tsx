@@ -5,10 +5,10 @@ import { Tournament, ChatMessage } from '@/lib/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import Image from 'next/image';
 import { GameIcon } from '../icons/game-icon';
-import { Button } from '../ui/button';
-import { Calendar, Clock, CircleDollarSign, Shield, Users, Trophy, MessageSquare, Send } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, Clock, CircleDollarSign, Shield, Users, Trophy } from 'lucide-react';
 import TournamentSummaryGenerator from './tournament-summary-generator';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
   Dialog,
@@ -22,11 +22,9 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { isUserParticipant } from '@/lib/data';
-import { addChatMessage, getChatMessages } from '@/lib/chat';
-import { ScrollArea } from '../ui/scroll-area';
+import Link from 'next/link';
 
 type TournamentDetailsProps = {
   tournament: Tournament;
@@ -36,16 +34,7 @@ type TournamentDetailsProps = {
   onDeclareWinner: (tournament: Tournament, winnerEmail: string, prizeAmount: number) => void;
 };
 
-export default function TournamentDetails({ tournament, onJoin, isAdmin, currentUserEmail, onDeclareWinner }: TournamentDetailsProps) {
-  const [hasJoined, setHasJoined] = useState(false);
-
-  useEffect(() => {
-    const checkParticipation = async () => {
-        const participating = await isUserParticipant(tournament.id, currentUserEmail);
-        setHasJoined(participating);
-    };
-    checkParticipation();
-  }, [tournament.id, currentUserEmail]);
+export default function TournamentDetails({ tournament, onJoin, isAdmin, onDeclareWinner }: TournamentDetailsProps) {
 
   return (
     <Card className="h-full overflow-auto">
@@ -88,13 +77,9 @@ export default function TournamentDetails({ tournament, onJoin, isAdmin, current
             </div>
         </div>
 
-        {hasJoined || isAdmin ? (
-            <TournamentChat tournamentId={tournament.id} currentUserEmail={currentUserEmail} />
-        ) : (
-            <Button size="lg" className="w-full font-bold text-lg bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow-accent" onClick={() => onJoin(tournament)}>
-                Join Tournament
-            </Button>
-        )}
+        <Button asChild size="lg" className="w-full font-bold text-lg bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow-accent">
+            <Link href={`/tournaments/${tournament.id}`}>Join & View Tournament</Link>
+        </Button>
         
         {isAdmin && <DeclareWinnerDialog tournament={tournament} onDeclareWinner={onDeclareWinner} />}
       </CardContent>
@@ -167,72 +152,3 @@ function DeclareWinnerDialog({ tournament, onDeclareWinner }: { tournament: Tour
         </Dialog>
     )
 }
-
-function TournamentChat({ tournamentId, currentUserEmail }: { tournamentId: string, currentUserEmail: string }) {
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
-    const [newMessage, setNewMessage] = useState('');
-    const scrollAreaRef = useRef<HTMLDivElement>(null);
-
-    const fetchMessages = useCallback(async () => {
-        const fetchedMessages = await getChatMessages(tournamentId);
-        setMessages(fetchedMessages);
-    }, [tournamentId]);
-
-    useEffect(() => {
-        fetchMessages();
-        const interval = setInterval(fetchMessages, 2000); // Poll for new messages
-        return () => clearInterval(interval);
-    }, [fetchMessages]);
-    
-    useEffect(() => {
-        // Scroll to bottom when new messages arrive
-        if (scrollAreaRef.current) {
-            scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight });
-        }
-    }, [messages]);
-
-    const handleSendMessage = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (newMessage.trim()) {
-            await addChatMessage(tournamentId, currentUserEmail, newMessage);
-            setNewMessage('');
-            fetchMessages(); // Immediately fetch new messages after sending
-        }
-    }
-
-    return (
-        <div className="space-y-4">
-            <h4 className="font-semibold text-lg flex items-center gap-2"><MessageSquare className="text-primary"/> Tournament Chat</h4>
-            <div className="p-4 bg-background rounded-md border h-64 flex flex-col">
-                <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
-                    <div className="space-y-4">
-                        {messages.map(msg => (
-                            <div key={msg.id} className={cn(
-                                "flex items-end gap-2",
-                                msg.userId === currentUserEmail ? "justify-end" : "justify-start"
-                            )}>
-                                <div className={cn(
-                                    "rounded-lg px-3 py-2 max-w-xs",
-                                    msg.userId === currentUserEmail ? "bg-primary text-primary-foreground" : "bg-muted"
-                                )}>
-                                    <p className="text-xs font-bold mb-1 truncate max-w-[100px]">{msg.userId.split('@')[0]}</p>
-                                    <p className="text-sm">{msg.message}</p>
-                                    <p className="text-xs opacity-70 mt-1 text-right">{formatDistanceToNow(new Date(msg.timestamp), { addSuffix: true })}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </ScrollArea>
-                <form onSubmit={handleSendMessage} className="mt-4 flex gap-2">
-                    <Input 
-                        value={newMessage} 
-                        onChange={e => setNewMessage(e.target.value)} 
-                        placeholder="Type a message..."
-                    />
-                    <Button type="submit" size="icon"><Send className="w-4 h-4"/></Button>
-                </form>
-            </div>
-        </div>
-    );
-}
-
