@@ -17,7 +17,6 @@ import { ArrowDownLeft, ArrowUpRight, CircleDollarSign, Infinity } from 'lucide-
 import { Button } from '../ui/button';
 import { WalletActionDialog } from './wallet-action-dialog';
 import { useAuth } from '@/hooks/use-auth';
-import { redeemCode } from '@/ai/flows/redeem-code';
 import { useToast } from '@/hooks/use-toast';
 import { addTransaction } from '@/lib/data';
 
@@ -36,33 +35,21 @@ export default function WalletHistory({ transactions, onWalletAction, onNewTrans
     return t.type === 'credit' ? acc + t.amount : acc - t.amount;
   }, 0);
 
-  const handleRedeemCode = async (code: string) => {
-    if (!user) return false;
-
-    const result = await redeemCode({ code, userId: user.email });
-
-    if (result.success) {
-      await addTransaction({
-        userId: user.email,
-        date: new Date().toISOString(),
-        description: `Redeemed Code: ${code}`,
-        amount: result.amount || 0,
-        type: 'credit',
-      });
-      toast({
-        title: 'Code Redeemed!',
-        description: `You received ${result.amount} coins!`,
-      });
-      onNewTransaction();
-      return true;
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid Code',
-        description: result.message || 'The entered code is not valid.',
-      });
-      return false;
-    }
+  const handleSimulatedGooglePlayPurchase = async (amount: number) => {
+    if (!user) return;
+    
+    await addTransaction({
+      userId: user.email,
+      date: new Date().toISOString(),
+      description: 'Google Play Purchase',
+      amount: amount,
+      type: 'credit',
+    });
+    toast({
+      title: 'Purchase Successful',
+      description: `You received ${amount.toLocaleString()} coins!`,
+    });
+    onNewTransaction();
   };
 
 
@@ -85,15 +72,21 @@ export default function WalletHistory({ transactions, onWalletAction, onNewTrans
         <div className="grid grid-cols-2 gap-4">
           <WalletActionDialog
             action="credit"
-            onConfirm={(amount, _, screenshot) => onWalletAction('credit', amount, undefined, screenshot)}
-            onRedeemCode={handleRedeemCode}
+            onConfirm={(amount, _, screenshot) => {
+                if (screenshot) { // UPI payment
+                    onWalletAction('credit', amount, undefined, screenshot)
+                } else { // Google Play payment
+                    handleSimulatedGooglePlayPurchase(amount);
+                }
+            }}
+            onNewTransaction={onNewTransaction}
           >
             <Button>Get Coins</Button>
           </WalletActionDialog>
           <WalletActionDialog
             action="debit"
             onConfirm={(amount, upiId) => onWalletAction('debit', amount, upiId)}
-            onRedeemCode={handleRedeemCode}
+            onNewTransaction={onNewTransaction}
           >
             <Button variant="outline">Redeem</Button>
           </WalletActionDialog>
