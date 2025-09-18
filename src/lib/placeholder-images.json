@@ -1,3 +1,28 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "user-avatar",
+      "description": "Placeholder for user avatar",
+      "imageUrl": "https://picsum.photos/seed/gamer-avatar/40/40",
+      "imageHint": "gamer avatar"
+    },
+    {
+      "id": "game-ff",
+      "description": "Placeholder for Free Fire game banner",
+      "imageUrl": "https://picsum.photos/seed/free-fire/400/200",
+      "imageHint": "battle royale shooter"
+    },
+    {
+      "id": "game-bgmi",
+      "description": "Placeholder for BGMI game banner",
+      "imageUrl": "https://picsum.photos/seed/bgmi/400/200",
+      "imageHint": "mobile battleground"
+    },
+    {
+      "id": "game-valorant",
+      "description": "Placeholder for Valorant game banner",
+      "imageUrl": "https://picsum.photos/seed/valorant/400/200",
+      "imageHint": "tactical shooter"
+    }
+  ]
 }
