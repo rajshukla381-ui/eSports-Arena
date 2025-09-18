@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Swords, User, Shield } from 'lucide-react';
+import { Swords, User, Shield, LogOut } from 'lucide-react';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 import {
@@ -14,9 +14,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { placeholderImages } from '@/lib/placeholder-images.json';
+import { useAuth } from '@/hooks/use-auth';
 
 export function Header() {
   const userAvatar = placeholderImages.find(p => p.id === 'user-avatar');
+  const { user, signOut } = useAuth();
+  const isAdmin = user?.email === 'rajshukla381@gmail.com';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -30,46 +33,55 @@ export function Header() {
             </Link>
         </div>
         <div className="flex flex-1 items-center justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="relative h-10 w-10 rounded-full"
-              >
-                <Avatar>
-                    <AvatarImage
-                      src={userAvatar?.imageUrl}
-                      alt="User Avatar"
-                      data-ai-hint={userAvatar?.imageHint}
-                    />
-                  <AvatarFallback>U</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">Admin</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    rajshukla381@gmail.com
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-                <Link href="/admin" passHref>
-                    <DropdownMenuItem>
-                    <Shield className="mr-2 h-4 w-4" />
-                    <span>Admin Panel</span>
-                    </DropdownMenuItem>
+          { user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="relative h-10 w-10 rounded-full"
+                >
+                  <Avatar>
+                      <AvatarImage
+                        src={userAvatar?.imageUrl}
+                        alt="User Avatar"
+                        data-ai-hint={userAvatar?.imageHint}
+                      />
+                    <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{isAdmin ? 'Admin' : 'Player'}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                  {isAdmin && (
+                    <Link href="/admin" passHref>
+                        <DropdownMenuItem>
+                        <Shield className="mr-2 h-4 w-4" />
+                        <span>Admin Panel</span>
+                        </DropdownMenuItem>
+                    </Link>
+                  )}
+                <Link href="/profile" passHref>
+                  <DropdownMenuItem>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile & Create</span>
+                  </DropdownMenuItem>
                 </Link>
-              <Link href="/profile" passHref>
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile & Create</span>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
                 </DropdownMenuItem>
-              </Link>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
     </header>

@@ -11,6 +11,7 @@ import type { Tournament, Transaction } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function Home() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -18,6 +19,13 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authLoading, router]);
 
 
   useEffect(() => {
@@ -94,7 +102,7 @@ export default function Home() {
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Header />
@@ -114,6 +122,11 @@ export default function Home() {
       </div>
     );
   }
+  
+  if (!user) {
+    return null; // or a loading indicator, as the redirect is happening
+  }
+
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
