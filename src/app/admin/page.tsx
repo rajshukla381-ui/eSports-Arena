@@ -11,7 +11,7 @@ import { getCoinRequests, updateCoinRequestStatus } from '@/lib/requests';
 import { addTransaction, getTransactions } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { ArrowDownLeft, ArrowUpRight, Check, XIcon } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Check, XIcon, Copy, Gift } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -39,7 +39,9 @@ export default function AdminPage() {
         await updateCoinRequestStatus(request.id, newStatus);
 
         if (newStatus === 'approved') {
-            const description = request.type === 'credit'
+            const description = request.redeemCode 
+                ? `Redeem Code: ${request.redeemCode}`
+                : request.type === 'credit'
                 ? 'Coins from Admin'
                 : 'Redeemed to Admin';
 
@@ -64,6 +66,11 @@ export default function AdminPage() {
         
         setRequests(requests.filter(r => r.id !== request.id));
     };
+
+    const copyToClipboard = (text: string, label: string) => {
+        navigator.clipboard.writeText(text);
+        toast({ title: 'Copied!', description: `${label} copied to clipboard.` });
+    }
 
 
   return (
@@ -99,14 +106,22 @@ export default function AdminPage() {
                                 <TableCell>{request.userId}</TableCell>
                                 <TableCell>
                                     <Badge variant={request.type === 'credit' ? 'secondary' : 'destructive'}>
-                                        {request.type === 'credit' ? <ArrowUpRight className="w-4 h-4 mr-1"/> : <ArrowDownLeft className="w-4 h-4 mr-1"/>}
-                                        {request.type}
+                                        {request.redeemCode ? <Gift className="w-4 h-4 mr-1"/> : request.type === 'credit' ? <ArrowUpRight className="w-4 h-4 mr-1"/> : <ArrowDownLeft className="w-4 h-4 mr-1"/>}
+                                        {request.redeemCode ? 'Redeem' : request.type}
                                     </Badge>
                                 </TableCell>
                                 <TableCell>{request.amount.toLocaleString()}</TableCell>
                                 <TableCell className="text-xs">
                                     {request.type === 'debit' && `UPI: ${request.upiId}`}
-                                    {request.type === 'credit' && `Screenshot: ${request.screenshot}`}
+                                    {request.type === 'credit' && request.screenshot && `Screenshot: ${request.screenshot}`}
+                                    {request.redeemCode && (
+                                        <div className="flex items-center gap-2">
+                                            <span>Code: <span className="font-mono">{request.redeemCode}</span></span>
+                                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copyToClipboard(request.redeemCode!, 'Redeem code')}>
+                                                <Copy className="w-3 h-3" />
+                                            </Button>
+                                        </div>
+                                    )}
                                 </TableCell>
                                 <TableCell>{format(new Date(request.date), 'PPp')}</TableCell>
                                 <TableCell className="text-right space-x-2">

@@ -117,6 +117,16 @@ export default function Home() {
     }
   };
 
+  const handleRedeemCodeAction = (code: string, amount: number) => {
+      if (!user) return;
+      addCoinRequest({
+          userId: user.email,
+          type: 'credit',
+          amount,
+          redeemCode: code,
+      });
+  }
+
   const handleDeclareWinner = (tournament: Tournament, winnerEmail: string, prizeAmount: number) => {
     const newTransaction: Transaction = {
         id: `t-win-${Date.now()}`,
@@ -197,6 +207,7 @@ export default function Home() {
             <WalletHistory
               transactions={transactions}
               onWalletAction={handleWalletAction}
+              onRedeemCode={handleRedeemCodeAction}
               onNewTransaction={fetchAndSetData}
               key={transactions.length} // Force re-render on transaction change
             />

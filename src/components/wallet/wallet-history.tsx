@@ -21,10 +21,11 @@ import { useAuth } from '@/hooks/use-auth';
 type WalletHistoryProps = {
   transactions: Transaction[];
   onWalletAction: (type: 'credit' | 'debit', amount: number, upiId?: string, screenshot?: File) => void;
+  onRedeemCode: (code: string, amount: number) => void;
   onNewTransaction: () => void;
 };
 
-export default function WalletHistory({ transactions, onWalletAction, onNewTransaction }: WalletHistoryProps) {
+export default function WalletHistory({ transactions, onWalletAction, onRedeemCode, onNewTransaction }: WalletHistoryProps) {
   const { user } = useAuth();
   const isAdmin = user?.email === 'rajshukla381@gmail.com';
 
@@ -55,6 +56,7 @@ export default function WalletHistory({ transactions, onWalletAction, onNewTrans
             onConfirm={(amount, _, screenshot) => {
                 onWalletAction('credit', amount, undefined, screenshot)
             }}
+            onRedeemCode={onRedeemCode}
             onNewTransaction={onNewTransaction}
           >
             <Button>Get Coins</Button>
@@ -62,6 +64,7 @@ export default function WalletHistory({ transactions, onWalletAction, onNewTrans
           <WalletActionDialog
             action="debit"
             onConfirm={(amount, upiId) => onWalletAction('debit', amount, upiId)}
+            onRedeemCode={onRedeemCode}
             onNewTransaction={onNewTransaction}
           >
             <Button variant="outline">Redeem</Button>

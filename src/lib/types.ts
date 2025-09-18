@@ -30,4 +30,5 @@ export type CoinRequest = {
   status: 'pending' | 'approved' | 'rejected';
   upiId?: string;
   screenshot?: string; // For simulation, we'll just store a name
+  redeemCode?: string;
 };

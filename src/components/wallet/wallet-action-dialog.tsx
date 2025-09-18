@@ -22,12 +22,12 @@ import { coinPackages } from '@/lib/coin-packages.json';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { redeemCode } from '@/ai/flows/redeem-code';
-import { addTransaction } from '@/lib/data';
 import { useAuth } from '@/hooks/use-auth';
 
 type WalletActionDialogProps = {
   action: 'credit' | 'debit';
   onConfirm: (amount: number, upiId?: string, screenshot?: File) => void;
+  onRedeemCode: (code: string, amount: number) => void;
   onNewTransaction: () => void;
   children: React.ReactNode;
 };
@@ -35,6 +35,7 @@ type WalletActionDialogProps = {
 export function WalletActionDialog({
   action,
   onConfirm,
+  onRedeemCode,
   onNewTransaction,
   children,
 }: WalletActionDialogProps) {
@@ -56,30 +57,32 @@ export function WalletActionDialog({
   const handleRedeemCode = async () => {
     if (!redeemCodeInput || !user) return;
     setIsRedeeming(true);
-    const result = await redeemCode({ code: redeemCodeInput });
-    if (result.success) {
-      await addTransaction({
-        userId: user.email,
-        date: new Date().toISOString(),
-        description: 'Redeemed Code',
-        amount: result.amount,
-        type: 'credit',
-      });
-      toast({
-        title: 'Code Redeemed!',
-        description: result.message,
-      });
-      onNewTransaction();
-      resetState();
-      setOpen(false);
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Redemption Failed',
-        description: result.message,
-      });
+    try {
+        const result = await redeemCode({ code: redeemCodeInput });
+        if (result.success) {
+            onRedeemCode(redeemCodeInput, result.amount);
+            toast({
+                title: 'Request Sent!',
+                description: 'Your redeem code request has been sent to the admin for approval.',
+            });
+            resetState();
+            setOpen(false);
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Invalid Code',
+                description: result.message,
+            });
+        }
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Redemption Failed',
+            description: 'An error occurred while trying to redeem the code.',
+        });
+    } finally {
+        setIsRedeeming(false);
     }
-    setIsRedeeming(false);
   };
 
 
@@ -242,7 +245,7 @@ export function WalletActionDialog({
                         <Button variant="outline" onClick={resetState}>Cancel</Button>
                     </DialogClose>
                     <Button onClick={handleRedeemCode} disabled={!redeemCodeInput || isRedeeming}>
-                        {isRedeeming ? 'Redeeming...' : 'Redeem'}
+                        {isRedeeming ? 'Validating...' : 'Redeem'}
                     </Button>
                 </DialogFooter>
             </TabsContent>
