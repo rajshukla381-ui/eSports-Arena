@@ -1,16 +1,20 @@
+
+'use client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tournament } from '@/lib/types';
+import type { Tournament } from '@/lib/types';
 import TournamentCard from './tournament-card';
 import Link from 'next/link';
 
 type TournamentListProps = {
   tournaments: Tournament[];
   activeTournamentId: string | null;
+  onJoin: (tournament: Tournament) => void;
 };
 
 export default function TournamentList({
   tournaments,
   activeTournamentId,
+  onJoin,
 }: TournamentListProps) {
   return (
     <Card className="h-full">
@@ -29,6 +33,7 @@ export default function TournamentList({
               <TournamentCard
                 tournament={tournament}
                 isActive={tournament.id === activeTournamentId}
+                onJoin={onJoin}
               />
             </Link>
           ))}

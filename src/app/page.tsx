@@ -96,6 +96,7 @@ export default function Home() {
             <TournamentList
               tournaments={tournaments}
               activeTournamentId={selectedTournamentId}
+              onJoin={handleJoinTournament}
             />
           </aside>
           <section className="lg:col-span-8 xl:col-span-5">

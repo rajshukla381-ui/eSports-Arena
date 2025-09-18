@@ -1,18 +1,30 @@
+
+'use client';
 import Image from 'next/image';
-import { Tournament } from '@/lib/types';
+import type { Tournament } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { GameIcon } from '../icons/game-icon';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 
 type TournamentCardProps = {
   tournament: Tournament;
   isActive: boolean;
+  onJoin: (tournament: Tournament) => void;
 };
 
 export default function TournamentCard({
   tournament,
   isActive,
+  onJoin,
 }: TournamentCardProps) {
+
+  const handleJoinClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onJoin(tournament);
+  }
+
   return (
     <div
       className={cn(
@@ -39,16 +51,21 @@ export default function TournamentCard({
           <h3 className="text-lg font-bold text-white drop-shadow-md">{tournament.title}</h3>
         </div>
       </div>
-      <div className="p-4 flex justify-between items-center">
-        <div>
-          <p className="text-sm text-muted-foreground">Prize Pool</p>
-          <p className="text-lg font-bold text-accent text-glow-accent">
-            ₹{tournament.prizePool.toLocaleString()}
-          </p>
+      <div className="p-4 space-y-3">
+        <div className="flex justify-between items-center">
+            <div>
+            <p className="text-sm text-muted-foreground">Prize Pool</p>
+            <p className="text-lg font-bold text-accent text-glow-accent">
+                ₹{tournament.prizePool.toLocaleString()}
+            </p>
+            </div>
+            <Badge variant="secondary">
+            Entry: ₹{tournament.entryFee}
+            </Badge>
         </div>
-        <Badge variant="secondary">
-          Entry: ₹{tournament.entryFee}
-        </Badge>
+        <Button size="sm" className="w-full font-bold" onClick={handleJoinClick}>
+            Join
+        </Button>
       </div>
     </div>
   );
