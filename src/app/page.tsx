@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import TournamentDetails from '@/components/tournaments/tournament-details';
 import TournamentList from '@/components/tournaments/tournament-list';
@@ -9,12 +9,24 @@ import WalletHistory from '@/components/wallet/wallet-history';
 import { getTournaments, getTransactions } from '@/lib/data';
 import type { Tournament, Transaction } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const { toast } = useToast();
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+
+  useEffect(() => {
+    if(!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
 
   useState(() => {
     getTournaments().then(setTournaments);
@@ -86,6 +98,29 @@ export default function Home() {
       return;
     }
   };
+
+  if (loading || !user) {
+    return (
+      <div className="flex flex-col min-h-screen bg-background text-foreground">
+        <Header />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-screen-2xl mx-auto">
+            <aside className="lg:col-span-4 xl:col-span-3 space-y-4">
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </aside>
+            <section className="lg:col-span-8 xl:col-span-5">
+              <Skeleton className="h-full w-full" />
+            </section>
+            <aside className="lg:col-span-12 xl:col-span-4">
+              <Skeleton className="h-full w-full" />
+            </aside>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
