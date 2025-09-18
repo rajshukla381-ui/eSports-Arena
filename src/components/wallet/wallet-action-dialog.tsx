@@ -44,7 +44,7 @@ export function WalletActionDialog({
       toast({
         variant: 'destructive',
         title: 'Invalid Amount',
-        description: 'Please enter a valid positive amount.',
+        description: 'Please enter a valid positive amount of coins.',
       });
       return;
     }
@@ -62,7 +62,7 @@ export function WalletActionDialog({
       toast({
         variant: 'destructive',
         title: 'UPI ID Required',
-        description: 'Please enter your UPI ID to request a withdrawal.',
+        description: 'Please enter your UPI ID to request a redemption.',
       });
       return;
     }
@@ -92,9 +92,9 @@ export function WalletActionDialog({
   const creditContent = (
     <>
       <DialogHeader>
-        <DialogTitle>Add Money</DialogTitle>
+        <DialogTitle>Get Gaming Coins</DialogTitle>
         <DialogDescription>
-          Send your payment to the UPI ID below. Then, enter the amount and upload a screenshot of your payment to send a request to the admin.
+          Send your payment to the UPI ID below to purchase coins. Then, enter the coin amount and upload a screenshot of your payment to send a request to the admin.
         </DialogDescription>
       </DialogHeader>
       <div className="bg-muted/50 p-4 rounded-md text-center space-y-2">
@@ -109,7 +109,7 @@ export function WalletActionDialog({
       <div className="grid gap-4 py-4">
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="amount" className="text-right">
-            Amount
+            Coin Amount
           </Label>
           <Input
             id="amount"
@@ -117,7 +117,7 @@ export function WalletActionDialog({
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="col-span-3"
-            placeholder="₹0.00"
+            placeholder="e.g., 10000"
           />
         </div>
         <div className="grid grid-cols-4 items-center gap-4">
@@ -147,15 +147,15 @@ export function WalletActionDialog({
   const debitContent = (
     <>
       <DialogHeader>
-        <DialogTitle>Withdraw Money</DialogTitle>
+        <DialogTitle>Redeem Coins</DialogTitle>
         <DialogDescription>
-          Enter your UPI ID and the amount to withdraw. Your request will be sent to an administrator for approval.
+          Enter your UPI ID and the amount of coins to redeem. Your request will be sent to an administrator for approval.
         </DialogDescription>
       </DialogHeader>
       <div className="grid gap-4 py-4">
          <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="amount" className="text-right">
-            Amount
+            Coin Amount
           </Label>
           <Input
             id="amount"
@@ -163,7 +163,7 @@ export function WalletActionDialog({
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="col-span-3"
-            placeholder="₹0.00"
+            placeholder="e.g., 10000"
           />
         </div>
         <div className="grid grid-cols-4 items-center gap-4">
@@ -183,7 +183,7 @@ export function WalletActionDialog({
         <DialogClose asChild>
           <Button variant="outline">Cancel</Button>
         </DialogClose>
-        <Button onClick={handleConfirm}>Request Withdrawal</Button>
+        <Button onClick={handleConfirm}>Request Redemption</Button>
       </DialogFooter>
     </>
   );

@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { GameIcon } from '../icons/game-icon';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { CircleDollarSign } from 'lucide-react';
 
 type TournamentCardProps = {
   tournament: Tournament;
@@ -55,12 +56,13 @@ export default function TournamentCard({
         <div className="flex justify-between items-center">
             <div>
             <p className="text-sm text-muted-foreground">Prize Pool</p>
-            <p className="text-lg font-bold text-accent text-glow-accent">
-                ₹{tournament.prizePool.toLocaleString()}
+            <p className="text-lg font-bold text-accent text-glow-accent flex items-center gap-1">
+                <CircleDollarSign className="w-5 h-5"/>
+                {tournament.prizePool.toLocaleString()}
             </p>
             </div>
-            <Badge variant="secondary">
-            Entry: ₹{tournament.entryFee}
+            <Badge variant="secondary" className="flex items-center gap-1">
+                Entry: <CircleDollarSign className="w-3 h-3"/>{tournament.entryFee.toLocaleString()}
             </Badge>
         </div>
         <Button size="sm" className="w-full font-bold" onClick={handleJoinClick}>

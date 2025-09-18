@@ -51,8 +51,8 @@ export default function Home() {
     if (currentBalance < tournament.entryFee) {
       toast({
         variant: 'destructive',
-        title: 'Insufficient Funds',
-        description: `You need at least ₹${tournament.entryFee} to join.`,
+        title: 'Insufficient Coins',
+        description: `You need at least ${tournament.entryFee} coins to join.`,
       });
       return;
     }
@@ -76,14 +76,14 @@ export default function Home() {
       if (amount > currentBalance) {
         toast({
           variant: 'destructive',
-          title: 'Insufficient Funds',
-          description: 'You cannot withdraw more than your current balance.',
+          title: 'Insufficient Coins',
+          description: 'You cannot redeem more coins than your current balance.',
         });
         return;
       }
       toast({
-        title: 'Withdrawal Request Sent',
-        description: `Your request to withdraw ₹${amount.toLocaleString()} to ${upiId} has been sent to the admin for approval.`,
+        title: 'Redemption Request Sent',
+        description: `Your request to redeem ${amount.toLocaleString()} coins to ${upiId} has been sent to the admin for approval.`,
       });
       // In a real app, you would not deduct this immediately. 
       // We are not creating a transaction here as it needs admin approval.
@@ -93,8 +93,8 @@ export default function Home() {
 
     if (type === 'credit') {
       toast({
-        title: 'Deposit Request Sent',
-        description: `Your request to deposit ₹${amount.toLocaleString()} has been sent to the admin for approval. Screenshot: ${screenshot?.name}`,
+        title: 'Coin Request Sent',
+        description: `Your request to purchase ${amount.toLocaleString()} coins has been sent to the admin for approval. Screenshot: ${screenshot?.name}`,
       });
       // In a real app, you would not credit this immediately.
       // We are not creating a transaction here as it needs admin approval.

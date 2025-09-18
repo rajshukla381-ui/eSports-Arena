@@ -13,7 +13,7 @@ import {
 import { Transaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { ArrowDownLeft, ArrowUpRight, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, CircleDollarSign } from 'lucide-react';
 import { Button } from '../ui/button';
 import { WalletActionDialog } from './wallet-action-dialog';
 
@@ -30,11 +30,11 @@ export default function WalletHistory({ transactions, onWalletAction }: WalletHi
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="flex flex-row items-center gap-4">
-        <Wallet className="w-8 h-8 text-primary" />
+        <CircleDollarSign className="w-8 h-8 text-primary" />
         <div>
           <CardTitle className="text-2xl font-bold">Wallet</CardTitle>
-          <p className="text-3xl font-bold mt-2">
-            ₹{currentBalance.toLocaleString()}
+          <p className="text-3xl font-bold mt-2 flex items-center gap-2">
+            {currentBalance.toLocaleString()} <span className="text-lg text-muted-foreground">Coins</span>
           </p>
         </div>
       </CardHeader>
@@ -44,13 +44,13 @@ export default function WalletHistory({ transactions, onWalletAction }: WalletHi
             action="credit"
             onConfirm={(amount, _, screenshot) => onWalletAction('credit', amount, undefined, screenshot)}
           >
-            <Button>Add Money</Button>
+            <Button>Get Coins</Button>
           </WalletActionDialog>
           <WalletActionDialog
             action="debit"
             onConfirm={(amount, upiId) => onWalletAction('debit', amount, upiId)}
           >
-            <Button variant="outline">Withdraw</Button>
+            <Button variant="outline">Redeem</Button>
           </WalletActionDialog>
         </div>
         <h3 className="font-semibold pt-4">Transaction History</h3>
@@ -82,11 +82,12 @@ export default function WalletHistory({ transactions, onWalletAction }: WalletHi
                   </TableCell>
                   <TableCell
                     className={cn(
-                      'text-right font-semibold',
+                      'text-right font-semibold flex items-center justify-end gap-1',
                       transaction.type === 'credit' ? 'text-accent' : 'text-destructive'
                     )}
                   >
-                    {transaction.type === 'credit' ? '+' : '-'}₹
+                    {transaction.type === 'credit' ? '+' : '-'}
+                    <CircleDollarSign className="w-4 h-4"/>
                     {transaction.amount.toLocaleString()}
                   </TableCell>
                 </TableRow>

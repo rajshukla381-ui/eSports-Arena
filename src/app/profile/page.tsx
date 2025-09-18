@@ -30,7 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Copy } from 'lucide-react';
+import { Copy, CircleDollarSign } from 'lucide-react';
 
 export default function ProfilePage() {
   const { toast } = useToast();
@@ -137,7 +137,7 @@ export default function ProfilePage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Create New Tournament</CardTitle>
-                    <CardDescription>Fill in the details below to host your own tournament. You will be required to pay the prize pool plus a 20% service fee.</CardDescription>
+                    <CardDescription>Fill in the details below to host your own tournament. You will be required to provide the prize pool amount in coins, plus a 20% service fee.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-6">
@@ -160,11 +160,11 @@ export default function ProfilePage() {
                         </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="entryFee">Entry Fee (₹)</Label>
+                            <Label htmlFor="entryFee">Entry Fee (Coins)</Label>
                             <Input id="entryFee" type="number" value={entryFee} onChange={(e) => setEntryFee(e.target.value)} placeholder="e.g., 100" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="prizePool">Prize Pool (₹)</Label>
+                            <Label htmlFor="prizePool">Prize Pool (Coins)</Label>
                             <Input id="prizePool" type="number" value={prizePool} onChange={(e) => setPrizePool(e.target.value)} placeholder="e.g., 10000" />
                         </div>
                         <div className="space-y-2">
@@ -214,30 +214,24 @@ export default function ProfilePage() {
        <AlertDialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Payment Required to Create Tournament</AlertDialogTitle>
+            <AlertDialogTitle>Coin Payment Required</AlertDialogTitle>
             <AlertDialogDescription>
-              To create your tournament, you need to pay the prize pool and a service fee to the main admin. Once paid, your tournament will be submitted for approval.
+              To create your tournament, you need to provide the prize pool and a service fee in coins. This amount will be deducted from your wallet.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-4">
               <div className="text-sm">
-                  <div className="flex justify-between"><span>Prize Pool:</span> <span>₹{prizePoolAmount.toLocaleString()}</span></div>
-                  <div className="flex justify-between"><span>Service Fee (20%):</span> <span>₹{feeAmount.toLocaleString()}</span></div>
-                  <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>Total Amount:</span> <span>₹{totalAmount.toLocaleString()}</span></div>
+                  <div className="flex justify-between items-center"><span>Prize Pool:</span> <span className="flex items-center gap-1"><CircleDollarSign className="w-4 h-4"/>{prizePoolAmount.toLocaleString()}</span></div>
+                  <div className="flex justify-between items-center"><span>Service Fee (20%):</span> <span className="flex items-center gap-1"><CircleDollarSign className="w-4 h-4"/>{feeAmount.toLocaleString()}</span></div>
+                  <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>Total Cost:</span> <span className="flex items-center gap-1"><CircleDollarSign className="w-4 h-4"/>{totalAmount.toLocaleString()}</span></div>
               </div>
               <div className="bg-muted/50 p-4 rounded-md text-center space-y-2">
-                <Label>Pay to this UPI ID</Label>
-                <div className="flex items-center justify-center gap-2 p-2 bg-background rounded-md">
-                    <p className="text-lg font-mono">{adminUpiId}</p>
-                    <Button variant="ghost" size="icon" onClick={copyToClipboard}>
-                        <Copy className="h-4 w-4"/>
-                    </Button>
-                </div>
+                <Label>This amount will be deducted from your wallet for admin approval.</Label>
               </div>
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handlePaymentConfirm}>I Have Paid</AlertDialogAction>
+            <AlertDialogAction onClick={handlePaymentConfirm}>Confirm & Create</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

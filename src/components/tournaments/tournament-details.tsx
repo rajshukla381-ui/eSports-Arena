@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import Image from 'next/image';
 import { GameIcon } from '../icons/game-icon';
 import { Button } from '../ui/button';
-import { Calendar, Clock, DollarSign, Shield, Users } from 'lucide-react';
+import { Calendar, Clock, CircleDollarSign, Shield, Users } from 'lucide-react';
 import TournamentSummaryGenerator from './tournament-summary-generator';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -41,8 +41,8 @@ export default function TournamentDetails({ tournament, onJoin }: TournamentDeta
       </CardHeader>
       <CardContent className="p-6 space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <InfoChip icon={DollarSign} label="Prize Pool" value={`₹${tournament.prizePool.toLocaleString()}`} accent />
-            <InfoChip icon={Users} label="Entry Fee" value={`₹${tournament.entryFee.toLocaleString()}`} />
+            <InfoChip icon={CircleDollarSign} label="Prize Pool" value={`${tournament.prizePool.toLocaleString()}`} accent />
+            <InfoChip icon={Users} label="Entry Fee" value={`${tournament.entryFee.toLocaleString()}`} />
             <InfoChip icon={Calendar} label="Date" value={format(new Date(tournament.matchTime), "MMM dd")} />
             <InfoChip icon={Clock} label="Time" value={format(new Date(tournament.matchTime), "h:mm a")} />
         </div>
@@ -69,6 +69,9 @@ const InfoChip = ({ icon: Icon, label, value, accent=false }: { icon: React.Elem
     <div className="p-3 bg-background rounded-lg border">
         <Icon className={cn("mx-auto h-6 w-6 mb-1", accent ? "text-accent" : "text-primary")} />
         <p className="text-xs text-muted-foreground">{label}</p>
-        <p className={cn("font-bold", accent && "text-accent")}>{value}</p>
+        <p className={cn("font-bold flex items-center justify-center gap-1", accent && "text-accent")}>
+          { (label === 'Prize Pool' || label === 'Entry Fee') && <CircleDollarSign className="w-4 h-4"/>}
+          {value}
+        </p>
     </div>
 )
