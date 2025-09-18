@@ -1,6 +1,6 @@
 
 import { initializeApp, getApp, getApps } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, signOut as firebaseSignOut } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -17,4 +17,9 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-export { auth, provider, signInWithPopup, signOut };
+const actionCodeSettings = {
+  url: typeof window !== 'undefined' ? `${window.location.origin}` : 'http://localhost:9002',
+  handleCodeInApp: true,
+};
+
+export { auth, provider, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, firebaseSignOut, actionCodeSettings };
