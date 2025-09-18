@@ -1,3 +1,4 @@
+
 import { Swords, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -10,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { placeholderImages } from '@/lib/placeholder-images.json';
 import { Button } from '../ui/button';
+import Link from 'next/link';
 
 const userAvatar = placeholderImages.find(p => p.id === 'user-avatar');
 
@@ -18,10 +20,12 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         <div className="mr-4 flex items-center">
-          <Swords className="h-8 w-8 mr-2 text-primary" />
-          <h1 className="text-2xl font-bold text-glow-primary tracking-wider">
-            eSports Arena
-          </h1>
+            <Link href="/" className='flex items-center gap-2'>
+                <Swords className="h-8 w-8 mr-2 text-primary" />
+                <h1 className="text-2xl font-bold text-glow-primary tracking-wider">
+                    eSports Arena
+                </h1>
+            </Link>
         </div>
         <div className="flex flex-1 items-center justify-end">
           <DropdownMenu>
@@ -52,10 +56,12 @@ export function Header() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
+              <Link href="/profile" passHref>
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+              </Link>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
