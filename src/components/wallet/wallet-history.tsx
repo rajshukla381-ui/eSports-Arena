@@ -19,7 +19,7 @@ import { WalletActionDialog } from './wallet-action-dialog';
 
 type WalletHistoryProps = {
   transactions: Transaction[];
-  onWalletAction: (type: 'credit' | 'debit', amount: number, upiId?: string) => void;
+  onWalletAction: (type: 'credit' | 'debit', amount: number, upiId?: string, screenshot?: File) => void;
 };
 
 export default function WalletHistory({ transactions, onWalletAction }: WalletHistoryProps) {
@@ -42,7 +42,7 @@ export default function WalletHistory({ transactions, onWalletAction }: WalletHi
         <div className="grid grid-cols-2 gap-4">
           <WalletActionDialog
             action="credit"
-            onConfirm={(amount) => onWalletAction('credit', amount)}
+            onConfirm={(amount, _, screenshot) => onWalletAction('credit', amount, undefined, screenshot)}
           >
             <Button>Add Money</Button>
           </WalletActionDialog>

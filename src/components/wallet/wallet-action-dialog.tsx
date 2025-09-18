@@ -16,11 +16,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Copy } from 'lucide-react';
+import { Copy, Upload } from 'lucide-react';
 
 type WalletActionDialogProps = {
   action: 'credit' | 'debit';
-  onConfirm: (amount: number, upiId?: string) => void;
+  onConfirm: (amount: number, upiId?: string, screenshot?: File) => void;
   children: React.ReactNode;
 };
 
@@ -32,6 +32,9 @@ export function WalletActionDialog({
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const [upiId, setUpiId] = useState('');
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [screenshotName, setScreenshotName] = useState('');
+
   const { toast } = useToast();
   const adminUpiId = '9106059600@fam';
 
@@ -46,6 +49,15 @@ export function WalletActionDialog({
       return;
     }
 
+    if (action === 'credit' && !screenshot) {
+      toast({
+        variant: 'destructive',
+        title: 'Screenshot Required',
+        description: 'Please upload a screenshot of your payment.',
+      });
+      return;
+    }
+
     if (action === 'debit' && !upiId) {
       toast({
         variant: 'destructive',
@@ -55,11 +67,21 @@ export function WalletActionDialog({
       return;
     }
     
-    onConfirm(numAmount, action === 'debit' ? upiId : undefined);
+    onConfirm(numAmount, action === 'debit' ? upiId : undefined, action === 'credit' ? screenshot! : undefined);
     
     setAmount('');
     setUpiId('');
+    setScreenshot(null);
+    setScreenshotName('');
     setOpen(false);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setScreenshot(file);
+      setScreenshotName(file.name);
+    }
   };
   
   const copyToClipboard = () => {
@@ -72,7 +94,7 @@ export function WalletActionDialog({
       <DialogHeader>
         <DialogTitle>Add Money</DialogTitle>
         <DialogDescription>
-          Send your payment to the UPI ID below, then enter the amount to update your wallet.
+          Send your payment to the UPI ID below. Then, enter the amount and upload a screenshot of your payment to send a request to the admin.
         </DialogDescription>
       </DialogHeader>
       <div className="bg-muted/50 p-4 rounded-md text-center space-y-2">
@@ -98,12 +120,26 @@ export function WalletActionDialog({
             placeholder="₹0.00"
           />
         </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <Label htmlFor="screenshot" className="text-right">
+            Screenshot
+          </Label>
+          <div className="col-span-3">
+            <Button asChild variant="outline" className="w-full justify-start font-normal">
+              <Label htmlFor="screenshot-file" className="w-full flex items-center gap-2 cursor-pointer">
+                <Upload className="w-4 h-4" />
+                <span>{screenshotName || 'Upload an image'}</span>
+              </Label>
+            </Button>
+            <Input id="screenshot-file" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+          </div>
+        </div>
       </div>
       <DialogFooter>
         <DialogClose asChild>
           <Button variant="outline">Cancel</Button>
         </DialogClose>
-        <Button onClick={handleConfirm}>Add to Wallet</Button>
+        <Button onClick={handleConfirm}>Send Request</Button>
       </DialogFooter>
     </>
   );

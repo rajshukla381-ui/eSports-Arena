@@ -56,7 +56,7 @@ export default function Home() {
     });
   };
 
-  const handleWalletAction = (type: 'credit' | 'debit', amount: number, upiId?: string) => {
+  const handleWalletAction = (type: 'credit' | 'debit', amount: number, upiId?: string, screenshot?: File) => {
     if (type === 'debit') {
       if (amount > currentBalance) {
         toast({
@@ -76,18 +76,15 @@ export default function Home() {
       return;
     }
 
-    const newTransaction: Transaction = {
-      id: `t${transactions.length + 1}`,
-      date: new Date().toISOString(),
-      description: type === 'credit' ? 'Wallet Deposit' : 'Withdrawal',
-      amount,
-      type,
-    };
-    setTransactions([newTransaction, ...transactions]);
-    toast({
-      title: `Transaction Successful`,
-      description: `₹${amount.toLocaleString()} has been ${type === 'credit' ? 'added to' : 'withdrawn from'} your wallet.`,
-    });
+    if (type === 'credit') {
+      toast({
+        title: 'Deposit Request Sent',
+        description: `Your request to deposit ₹${amount.toLocaleString()} has been sent to the admin for approval. Screenshot: ${screenshot?.name}`,
+      });
+      // In a real app, you would not credit this immediately.
+      // We are not creating a transaction here as it needs admin approval.
+      return;
+    }
   };
 
   return (
