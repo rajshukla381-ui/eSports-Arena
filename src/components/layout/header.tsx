@@ -1,6 +1,15 @@
-import { Swords } from 'lucide-react';
+import { Swords, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { placeholderImages } from '@/lib/placeholder-images.json';
+import { Button } from '../ui/button';
 
 const userAvatar = placeholderImages.find(p => p.id === 'user-avatar');
 
@@ -15,10 +24,40 @@ export function Header() {
           </h1>
         </div>
         <div className="flex flex-1 items-center justify-end">
-          <Avatar>
-            {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User Avatar" data-ai-hint={userAvatar.imageHint} />}
-            <AvatarFallback>AV</AvatarFallback>
-          </Avatar>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="relative h-10 w-10 rounded-full"
+              >
+                <Avatar>
+                  {userAvatar && (
+                    <AvatarImage
+                      src={userAvatar.imageUrl}
+                      alt="User Avatar"
+                      data-ai-hint={userAvatar.imageHint}
+                    />
+                  )}
+                  <AvatarFallback>AV</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">GamerTag</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    gamer@example.com
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
