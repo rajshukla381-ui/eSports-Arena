@@ -35,7 +35,7 @@ export type CoinRequest = {
   screenshot?: string; // For simulation, we'll just store a name
   redeemCode?: string;
   redemptionType?: 'upi' | 'google_play';
-  details?: string; // For storing '₹10 Google Play Code' etc.
+  details?: string; // For storing '₹10 Google Play Code' etc. or the actual sent code
   tournamentDetails?: Omit<Tournament, 'id' | 'status' | 'imageUrl' | 'imageHint'>;
 };
 
@@ -47,3 +47,5 @@ export type Notification = {
     isRead: boolean;
     link?: string;
 };
+
+    

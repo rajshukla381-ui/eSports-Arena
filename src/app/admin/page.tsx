@@ -22,10 +22,25 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { placeholderImages } from '@/lib/placeholder-images.json';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 
 export default function AdminPage() {
     const [requests, setRequests] = useState<CoinRequest[]>([]);
+    const [selectedRequest, setSelectedRequest] = useState<CoinRequest | null>(null);
+    const [redeemCode, setRedeemCode] = useState('');
+    const [isSendCodeDialogOpen, setIsSendCodeDialogOpen] = useState(false);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -36,7 +51,29 @@ export default function AdminPage() {
         fetchRequests();
     }, []);
 
-    const handleRequest = async (request: CoinRequest, newStatus: 'approved' | 'rejected') => {
+    const openSendCodeDialog = (request: CoinRequest) => {
+        setSelectedRequest(request);
+        setIsSendCodeDialogOpen(true);
+    };
+
+    const handleSendCode = async () => {
+        if (!selectedRequest || !redeemCode) {
+            toast({
+                title: 'Error',
+                description: 'Redeem code cannot be empty.',
+                variant: 'destructive'
+            });
+            return;
+        }
+        
+        await handleRequest(selectedRequest, 'approved', redeemCode);
+
+        setIsSendCodeDialogOpen(false);
+        setRedeemCode('');
+        setSelectedRequest(null);
+    }
+
+    const handleRequest = async (request: CoinRequest, newStatus: 'approved' | 'rejected', code?: string) => {
         
         if (newStatus === 'approved') {
             let description = '';
@@ -118,7 +155,7 @@ export default function AdminPage() {
             });
         }
         
-        await updateCoinRequestStatus(request.id, newStatus);
+        await updateCoinRequestStatus(request.id, newStatus, code);
         
         setRequests(requests.filter(r => r.id !== request.id));
     };
@@ -206,7 +243,15 @@ export default function AdminPage() {
                                 </TableCell>
                                 <TableCell>{format(new Date(request.date), 'PPp')}</TableCell>
                                 <TableCell className="text-right space-x-2">
-                                    <Button size="icon" variant="ghost" className="text-green-500" onClick={() => handleRequest(request, 'approved')}>
+                                    <Button 
+                                        size="icon" 
+                                        variant="ghost" 
+                                        className="text-green-500" 
+                                        onClick={() => 
+                                            request.redemptionType === 'google_play' 
+                                                ? openSendCodeDialog(request) 
+                                                : handleRequest(request, 'approved')
+                                        }>
                                         <Check className="w-5 h-5" />
                                     </Button>
                                     <Button size="icon" variant="ghost" className="text-red-500" onClick={() => handleRequest(request, 'rejected')}>
@@ -228,6 +273,35 @@ export default function AdminPage() {
 
         </div>
       </main>
+
+       <Dialog open={isSendCodeDialogOpen} onOpenChange={setIsSendCodeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Google Play Code</DialogTitle>
+            <DialogDescription>
+              Enter the Google Play redeem code to send to {selectedRequest?.userId} for their request of a {selectedRequest?.details}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+              <Label htmlFor="redeem-code">Redeem Code</Label>
+              <Textarea
+                id="redeem-code"
+                value={redeemCode}
+                onChange={(e) => setRedeemCode(e.target.value)}
+                placeholder="Enter the code to send to the user"
+                className="min-h-[100px]"
+              />
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+                <Button variant="outline" onClick={() => { setRedeemCode(''); setSelectedRequest(null); }}>Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleSendCode}>Send Code</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
+    
