@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Transaction } from '@/lib/types';
+import { Transaction, CoinRequest } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ArrowDownLeft, ArrowUpRight, CircleDollarSign, Infinity } from 'lucide-react';
@@ -20,7 +20,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 type WalletHistoryProps = {
   transactions: Transaction[];
-  onWalletAction: (type: 'credit' | 'debit', amount: number, upiId?: string, screenshot?: File) => void;
+  onWalletAction: (request: Omit<CoinRequest, 'id' | 'date' | 'status' | 'userId'>) => void;
   onRedeemCode: (code: string, amount: number) => void;
   onNewTransaction: () => void;
 };
@@ -53,19 +53,15 @@ export default function WalletHistory({ transactions, onWalletAction, onRedeemCo
         <div className="grid grid-cols-2 gap-4">
           <WalletActionDialog
             action="credit"
-            onConfirm={(amount, _, screenshot) => {
-                onWalletAction('credit', amount, undefined, screenshot)
-            }}
+            onConfirm={(request) => onWalletAction(request)}
             onRedeemCode={onRedeemCode}
-            onNewTransaction={onNewTransaction}
           >
             <Button>Get Coins</Button>
           </WalletActionDialog>
           <WalletActionDialog
             action="debit"
-            onConfirm={(amount, upiId) => onWalletAction('debit', amount, upiId)}
+            onConfirm={(request) => onWalletAction(request)}
             onRedeemCode={onRedeemCode}
-            onNewTransaction={onNewTransaction}
           >
             <Button variant="outline">Redeem</Button>
           </WalletActionDialog>

@@ -11,7 +11,7 @@ import { getCoinRequests, updateCoinRequestStatus } from '@/lib/requests';
 import { addTransaction, getTransactions } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { ArrowDownLeft, ArrowUpRight, Check, XIcon, Copy, Gift } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Check, XIcon, Copy, Gift, CircleDollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -36,6 +36,8 @@ export default function AdminPage() {
     }, []);
 
     const handleRequest = async (request: CoinRequest, newStatus: 'approved' | 'rejected') => {
+        const originalRequestAmount = request.originalAmount || request.amount;
+
         await updateCoinRequestStatus(request.id, newStatus);
 
         if (newStatus === 'approved') {
@@ -44,18 +46,22 @@ export default function AdminPage() {
                 : request.type === 'credit'
                 ? 'Coins from Admin'
                 : 'Redeemed to Admin';
+            
+            // For debits (withdrawals), the transaction amount debited from the user's wallet
+            // should be the original requested amount before fees.
+            const transactionAmount = request.type === 'debit' ? originalRequestAmount : request.amount;
 
             await addTransaction({
                 userId: request.userId,
                 date: new Date().toISOString(),
                 description,
-                amount: request.amount,
+                amount: transactionAmount,
                 type: request.type,
             });
 
             toast({
                 title: 'Request Approved',
-                description: `A transaction for ${request.amount} coins has been created for ${request.userId}.`
+                description: `A transaction for ${transactionAmount.toLocaleString()} coins has been created for ${request.userId}.`
             });
         } else {
              toast({
@@ -110,7 +116,19 @@ export default function AdminPage() {
                                         {request.redeemCode ? 'Redeem' : request.type}
                                     </Badge>
                                 </TableCell>
-                                <TableCell>{request.amount.toLocaleString()}</TableCell>
+                                <TableCell>
+                                    <div className="flex flex-col">
+                                        <span className="font-bold flex items-center gap-1">
+                                            <CircleDollarSign className="w-4 h-4" />
+                                            {request.amount.toLocaleString()}
+                                        </span>
+                                        {request.originalAmount && (
+                                            <span className="text-xs text-muted-foreground">
+                                                (Original: {request.originalAmount.toLocaleString()})
+                                            </span>
+                                        )}
+                                    </div>
+                                </TableCell>
                                 <TableCell className="text-xs">
                                     {request.type === 'debit' && `UPI: ${request.upiId}`}
                                     {request.type === 'credit' && request.screenshot && `Screenshot: ${request.screenshot}`}

@@ -23,20 +23,22 @@ import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { redeemCode } from '@/ai/flows/redeem-code';
 import { useAuth } from '@/hooks/use-auth';
+import { CoinRequest } from '@/lib/types';
 
 type WalletActionDialogProps = {
   action: 'credit' | 'debit';
-  onConfirm: (amount: number, upiId?: string, screenshot?: File) => void;
+  onConfirm: (request: Omit<CoinRequest, 'id' | 'date' | 'status' | 'userId'>) => void;
   onRedeemCode: (code: string, amount: number) => void;
-  onNewTransaction: () => void;
   children: React.ReactNode;
 };
+
+const GST_RATE = 0.28;
+const PLATFORM_FEE_RATE = 0.10;
 
 export function WalletActionDialog({
   action,
   onConfirm,
   onRedeemCode,
-  onNewTransaction,
   children,
 }: WalletActionDialogProps) {
   const [open, setOpen] = useState(false);
@@ -87,47 +89,44 @@ export function WalletActionDialog({
 
 
   const handleConfirm = () => {
-    const numAmount = selectedPackage ? selectedPackage.amount : parseFloat(amount);
-    if (isNaN(numAmount) || numAmount <= 0) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid Amount',
-        description: 'Please select a package or enter a valid amount.',
-      });
-      return;
-    }
-
     if (action === 'credit') {
         if (!selectedPackage) {
-            toast({
-                variant: 'destructive',
-                title: 'No Package Selected',
-                description: 'Please select a coin package to continue.',
-            });
+            toast({ variant: 'destructive', title: 'No Package Selected', description: 'Please select a coin package to continue.' });
             return;
         }
 
         if (!screenshot) {
-             toast({
-                variant: 'destructive',
-                title: 'Screenshot Required',
-                description: 'Please upload a screenshot of your payment.',
-            });
+             toast({ variant: 'destructive', title: 'Screenshot Required', description: 'Please upload a screenshot of your payment.' });
             return;
         }
 
-        onConfirm(numAmount, undefined, screenshot!);
+        onConfirm({
+            type: 'credit',
+            amount: selectedPackage.amount,
+            screenshot: screenshot.name,
+        });
 
     } else { // Debit action
-        if (!upiId) {
-            toast({
-                variant: 'destructive',
-                title: 'UPI ID Required',
-                description: 'Please enter your UPI ID to request a redemption.',
-            });
+        const numAmount = parseFloat(amount);
+        if (isNaN(numAmount) || numAmount <= 0) {
+            toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid amount.' });
             return;
         }
-        onConfirm(numAmount, upiId, undefined);
+        if (!upiId) {
+            toast({ variant: 'destructive', title: 'UPI ID Required', description: 'Please enter your UPI ID to request a redemption.' });
+            return;
+        }
+
+        const gst = numAmount * GST_RATE;
+        const platformFee = numAmount * PLATFORM_FEE_RATE;
+        const finalAmount = numAmount - gst - platformFee;
+
+        onConfirm({
+            type: 'debit',
+            amount: finalAmount,
+            originalAmount: numAmount,
+            upiId: upiId,
+        });
     }
     
     resetState();
@@ -253,12 +252,18 @@ export function WalletActionDialog({
     </>
   );
 
+  const numAmount = parseFloat(amount) || 0;
+  const gst = numAmount * GST_RATE;
+  const platformFee = numAmount * PLATFORM_FEE_RATE;
+  const totalDeductions = gst + platformFee;
+  const finalAmount = numAmount - totalDeductions;
+
   const debitContent = (
     <>
       <DialogHeader>
         <DialogTitle>Redeem Coins</DialogTitle>
         <DialogDescription>
-          Enter your UPI ID and the amount of coins to redeem. Your request will be sent to an administrator for approval.
+          Enter your UPI ID and the amount to redeem. 28% GST and 10% platform fees will be applied.
         </DialogDescription>
       </DialogHeader>
       <div className="grid gap-4 py-4">
@@ -287,12 +292,28 @@ export function WalletActionDialog({
             placeholder="example@upi"
           />
         </div>
+        {numAmount > 0 && (
+            <div className="col-span-4 p-4 mt-2 space-y-2 text-sm border rounded-md bg-muted/50">
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">GST (28%)</span>
+                    <span className="font-medium">- {gst.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                 <div className="flex justify-between">
+                    <span className="text-muted-foreground">Platform Fee (10%)</span>
+                    <span className="font-medium">- {platformFee.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                 <div className="flex justify-between font-bold border-t pt-2 mt-2">
+                    <span>You Will Receive</span>
+                    <span>{finalAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+            </div>
+        )}
       </div>
       <DialogFooter>
         <DialogClose asChild>
           <Button variant="outline" onClick={resetState}>Cancel</Button>
         </DialogClose>
-        <Button onClick={handleConfirm}>Request Redemption</Button>
+        <Button onClick={handleConfirm} disabled={numAmount <= 0 || !upiId}>Request Redemption</Button>
       </DialogFooter>
     </>
   );

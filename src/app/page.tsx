@@ -8,7 +8,7 @@ import TournamentList from '@/components/tournaments/tournament-list';
 import WalletHistory from '@/components/wallet/wallet-history';
 import { getTournaments, getTransactions, addTransaction } from '@/lib/data';
 import { addCoinRequest } from '@/lib/requests';
-import type { Tournament, Transaction } from '@/lib/types';
+import type { Tournament, Transaction, CoinRequest } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -82,11 +82,12 @@ export default function Home() {
     });
   };
 
-  const handleWalletAction = (type: 'credit' | 'debit', amount: number, upiId?: string, screenshot?: File) => {
+  const handleWalletAction = (request: Omit<CoinRequest, 'id' | 'date' | 'status' | 'userId'>) => {
     if (!user) return;
-
-    if (type === 'debit') {
-      if (amount > currentBalance && !isAdmin) {
+    
+    if (request.type === 'debit') {
+      const originalAmount = request.originalAmount || request.amount;
+       if (originalAmount > currentBalance && !isAdmin) {
         toast({
           variant: 'destructive',
           title: 'Insufficient Coins',
@@ -95,24 +96,21 @@ export default function Home() {
         return;
       }
     }
-
+    
     addCoinRequest({
       userId: user.email,
-      type,
-      amount,
-      upiId,
-      screenshot: screenshot?.name,
+      ...request,
     });
 
-    if (type === 'credit') {
+    if (request.type === 'credit') {
         toast({
             title: 'Coin Request Sent',
-            description: `Your request to add ${amount.toLocaleString()} coins has been sent to the admin for approval.`,
+            description: `Your request to add ${request.amount.toLocaleString()} coins has been sent to the admin for approval.`,
         });
     } else {
         toast({
             title: 'Redemption Request Sent',
-            description: `Your request to redeem ${amount.toLocaleString()} coins to ${upiId} has been sent for approval.`,
+            description: `Your request to redeem ${request.originalAmount?.toLocaleString()} coins has been sent for approval. You will receive ${request.amount.toLocaleString()} coins.`,
         });
     }
   };
