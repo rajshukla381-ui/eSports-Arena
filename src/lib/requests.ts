@@ -19,12 +19,16 @@ export const addCoinRequest = async (request: Omit<CoinRequest, 'id' | 'date' | 
     };
     coinRequestsData.unshift(newRequest);
     
-    // If it's a withdrawal request, immediately create a pending debit transaction
-    if (newRequest.type === 'debit') {
+    // If it's a withdrawal or tournament creation, create a pending debit transaction
+    if (newRequest.type === 'debit' || newRequest.type === 'tournament_creation') {
+        const description = newRequest.type === 'debit'
+            ? 'Withdrawal Request (Pending)'
+            : `Tournament Fee: ${newRequest.tournamentDetails?.title} (Pending)`;
+
         await addTransaction({
             userId: newRequest.userId,
             date: new Date().toISOString(),
-            description: `Withdrawal Request (Pending)`,
+            description: description,
             amount: newRequest.amount,
             type: 'debit'
         });
@@ -45,6 +49,8 @@ export const updateCoinRequestStatus = async (id: string, status: 'approved' | '
                 if (status === 'approved') {
                     if (request.type === 'tournament_creation') {
                         message = `Your tournament "${request.tournamentDetails?.title}" has been approved and is now live!`;
+                        // The debit transaction was already created as pending, now it's final.
+                        // We could update its description here if needed, but for now we'll leave it.
                     } else if (request.type === 'credit') {
                         message = `Your request for ${request.amount.toLocaleString()} coins has been approved.`;
                     } else if (request.type === 'debit') {
@@ -56,8 +62,19 @@ export const updateCoinRequestStatus = async (id: string, status: 'approved' | '
                          }
                     }
                 } else { // Rejected
+                     const refundDescription = request.type === 'tournament_creation'
+                        ? `Tournament Fee Refund: ${request.tournamentDetails?.title}`
+                        : `Withdrawal Request Rejected (Refund)`;
+
                      if (request.type === 'tournament_creation') {
                         message = `Your tournament "${request.tournamentDetails?.title}" has been rejected.`;
+                        await addTransaction({
+                            userId: request.userId,
+                            date: new Date().toISOString(),
+                            description: refundDescription,
+                            amount: request.amount,
+                            type: 'credit'
+                        });
                     } else if (request.type === 'credit') {
                         message = `Your request for ${request.amount.toLocaleString()} coins has been rejected.`;
                     } else if (request.type === 'debit') {
@@ -66,7 +83,7 @@ export const updateCoinRequestStatus = async (id: string, status: 'approved' | '
                         await addTransaction({
                             userId: request.userId,
                             date: new Date().toISOString(),
-                            description: `Withdrawal Request Rejected (Refund)`,
+                            description: refundDescription,
                             amount: request.amount,
                             type: 'credit'
                         });
@@ -85,3 +102,5 @@ export const updateCoinRequestStatus = async (id: string, status: 'approved' | '
         }, 50)
     });
 }
+
+    

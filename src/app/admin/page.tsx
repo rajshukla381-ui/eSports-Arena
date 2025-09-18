@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -236,6 +235,9 @@ export default function AdminPage() {
                                             <span className="font-bold flex items-center gap-1">
                                                 <CircleDollarSign className="w-4 h-4" />{request.amount.toLocaleString()}
                                             </span>
+                                            {request.type === 'tournament_creation' && request.tournamentDetails && (
+                                                <span className="text-xs text-muted-foreground">Prize: {request.tournamentDetails.prizePool.toLocaleString()}</span>
+                                            )}
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-xs max-w-[200px] truncate">
@@ -475,3 +477,5 @@ function DeleteTournamentDialog({ tournament, onDelete }: { tournament: Tourname
         </AlertDialog>
     );
 }
+
+    
