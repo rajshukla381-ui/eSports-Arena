@@ -89,7 +89,7 @@ export default function AdminPage() {
 
             } else if (request.type === 'credit') {
                  const description = request.redeemCode 
-                    ? `Redeem Code: ${request.redeemCode}`
+                    ? `Redeemed Code: ${request.redeemCode}`
                     : 'Points from Admin';
                 
                 const transactionAmount = request.amount;
