@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, Upload, CircleDollarSign, Gift } from 'lucide-react';
+import { Copy, Upload, CircleDollarSign, Gift, IndianRupee, Play } from 'lucide-react';
 import { coinPackages } from '@/lib/coin-packages.json';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -36,6 +36,10 @@ const GST_RATE = 0.28;
 const PLATFORM_FEE_RATE = 0.10;
 const COIN_TO_INR_RATE = 0.1; // 10 coins = 1 INR
 
+const googlePlayPackages = [
+    { id: 'gp-10', name: '₹10 Google Play Code', coinCost: 170, value: 10 }
+];
+
 export function WalletActionDialog({
   action,
   onConfirm,
@@ -48,6 +52,7 @@ export function WalletActionDialog({
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [screenshotName, setScreenshotName] = useState('');
   const [selectedPackage, setSelectedPackage] = useState<(typeof coinPackages[0]) | null>(null);
+  const [selectedGpPackage, setSelectedGpPackage] = useState<(typeof googlePlayPackages[0]) | null>(null);
   const [redeemCodeInput, setRedeemCodeInput] = useState('');
   const [isRedeeming, setIsRedeeming] = useState(false);
   const { user } = useAuth();
@@ -55,6 +60,7 @@ export function WalletActionDialog({
   const { toast } = useToast();
   const adminUpiId = '9106059600@fam';
   const [activeTab, setActiveTab] = useState('buy-coins');
+  const [redeemTab, setRedeemTab] = useState('redeem-upi');
 
 
   const handleRedeemCode = async () => {
@@ -108,27 +114,42 @@ export function WalletActionDialog({
         });
 
     } else { // Debit action
-        const coinAmount = parseFloat(amount);
-        if (isNaN(coinAmount) || coinAmount <= 0) {
-            toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid amount.' });
-            return;
-        }
-        if (!upiId) {
-            toast({ variant: 'destructive', title: 'UPI ID Required', description: 'Please enter your UPI ID to request a redemption.' });
-            return;
-        }
+        if (redeemTab === 'redeem-upi') {
+            const coinAmount = parseFloat(amount);
+            if (isNaN(coinAmount) || coinAmount <= 0) {
+                toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid amount.' });
+                return;
+            }
+            if (!upiId) {
+                toast({ variant: 'destructive', title: 'UPI ID Required', description: 'Please enter your UPI ID to request a redemption.' });
+                return;
+            }
 
-        const inrValue = coinAmount * COIN_TO_INR_RATE;
-        const gst = inrValue * GST_RATE;
-        const platformFee = inrValue * PLATFORM_FEE_RATE;
-        const finalAmount = inrValue - gst - platformFee;
+            const inrValue = coinAmount * COIN_TO_INR_RATE;
+            const gst = inrValue * GST_RATE;
+            const platformFee = inrValue * PLATFORM_FEE_RATE;
+            const finalAmount = inrValue - gst - platformFee;
 
-        onConfirm({
-            type: 'debit',
-            amount: finalAmount, // Final INR amount
-            originalAmount: coinAmount, // Original Coin amount
-            upiId: upiId,
-        });
+            onConfirm({
+                type: 'debit',
+                redemptionType: 'upi',
+                amount: finalAmount, // Final INR amount
+                originalAmount: coinAmount, // Original Coin amount
+                upiId: upiId,
+            });
+        } else if (redeemTab === 'redeem-gp') {
+             if (!selectedGpPackage) {
+                toast({ variant: 'destructive', title: 'No Package Selected', description: 'Please select a Google Play package.' });
+                return;
+            }
+            onConfirm({
+                type: 'debit',
+                redemptionType: 'google_play',
+                amount: selectedGpPackage.value,
+                originalAmount: selectedGpPackage.coinCost,
+                details: selectedGpPackage.name,
+            })
+        }
     }
     
     resetState();
@@ -141,7 +162,9 @@ export function WalletActionDialog({
     setScreenshot(null);
     setScreenshotName('');
     setSelectedPackage(null);
+    setSelectedGpPackage(null);
     setActiveTab('buy-coins');
+    setRedeemTab('redeem-upi');
     setRedeemCodeInput('');
   }
 
@@ -266,62 +289,105 @@ export function WalletActionDialog({
       <DialogHeader>
         <DialogTitle>Redeem Coins</DialogTitle>
         <DialogDescription>
-          Enter the coin amount to redeem. 28% GST and 10% platform fees will be applied to the real money value (10 coins = ₹1).
+          Choose how you want to redeem your coins.
         </DialogDescription>
       </DialogHeader>
-      <div className="grid gap-4 py-4">
-         <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="amount" className="text-right">
-            Coin Amount
-          </Label>
-          <Input
-            id="amount"
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className="col-span-3"
-            placeholder="e.g., 10000"
-          />
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="upiId" className="text-right">
-            Your UPI ID
-          </Label>
-          <Input
-            id="upiId"
-            value={upiId}
-            onChange={(e) => setUpiId(e.target.value)}
-            className="col-span-3"
-            placeholder="example@upi"
-          />
-        </div>
-        {coinAmount > 0 && (
-            <div className="col-span-4 p-4 mt-2 space-y-2 text-sm border rounded-md bg-muted/50">
-                <div className="flex justify-between">
-                    <span className="text-muted-foreground">Value (10 coins = ₹1)</span>
-                    <span className="font-medium">₹{inrValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+      <Tabs value={redeemTab} onValueChange={setRedeemTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="redeem-upi"><IndianRupee className="w-4 h-4 mr-2"/>Redeem to UPI</TabsTrigger>
+                <TabsTrigger value="redeem-gp"><Play className="w-4 h-4 mr-2"/>Google Play Code</TabsTrigger>
+            </TabsList>
+            <TabsContent value="redeem-upi">
+                <div className="grid gap-4 py-4">
+                    <p className="text-sm text-muted-foreground px-1">
+                        28% GST and 10% platform fees will be applied to the real money value (10 coins = ₹1).
+                    </p>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="amount" className="text-right">
+                        Coin Amount
+                    </Label>
+                    <Input
+                        id="amount"
+                        type="number"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="col-span-3"
+                        placeholder="e.g., 10000"
+                    />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="upiId" className="text-right">
+                        Your UPI ID
+                    </Label>
+                    <Input
+                        id="upiId"
+                        value={upiId}
+                        onChange={(e) => setUpiId(e.target.value)}
+                        className="col-span-3"
+                        placeholder="example@upi"
+                    />
+                    </div>
+                    {coinAmount > 0 && (
+                        <div className="col-span-4 p-4 mt-2 space-y-2 text-sm border rounded-md bg-muted/50">
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Value (10 coins = ₹1)</span>
+                                <span className="font-medium">₹{inrValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            </div>
+                            <div className="flex justify-between text-destructive">
+                                <span className="">GST (28%)</span>
+                                <span className="font-medium">- ₹{gst.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            </div>
+                            <div className="flex justify-between text-destructive">
+                                <span className="">Platform Fee (10%)</span>
+                                <span className="font-medium">- ₹{platformFee.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            </div>
+                            <div className="flex justify-between font-bold border-t pt-2 mt-2">
+                                <span>You Will Receive</span>
+                                <span>₹{finalAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
-                <div className="flex justify-between text-destructive">
-                    <span className="">GST (28%)</span>
-                    <span className="font-medium">- ₹{gst.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                <DialogFooter>
+                    <DialogClose asChild>
+                    <Button variant="outline" onClick={resetState}>Cancel</Button>
+                    </DialogClose>
+                    <Button onClick={handleConfirm} disabled={coinAmount <= 0 || !upiId}>Request Redemption</Button>
+                </DialogFooter>
+            </TabsContent>
+            <TabsContent value="redeem-gp">
+                <div className="py-4 space-y-4">
+                    <p className="text-sm text-muted-foreground px-1">
+                        Select a Google Play code package to redeem.
+                    </p>
+                    <div className="space-y-2">
+                         {googlePlayPackages.map(pkg => (
+                            <div key={pkg.id} 
+                                className={cn(
+                                    "border-2 rounded-lg p-4 flex justify-between items-center cursor-pointer transition-all bg-card hover:border-primary/80",
+                                    selectedGpPackage?.id === pkg.id ? 'border-primary shadow-glow-primary' : 'border-border'
+                                )}
+                                onClick={() => setSelectedGpPackage(pkg)}>
+                                <div className='flex items-center gap-3'>
+                                    <Play className="w-6 h-6 text-green-500" />
+                                    <span className="font-semibold">{pkg.name}</span>
+                                </div>
+                                <div className="flex items-center gap-1 font-bold text-lg">
+                                    <CircleDollarSign className="w-5 h-5 text-primary" />
+                                    {pkg.coinCost.toLocaleString()}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-                 <div className="flex justify-between text-destructive">
-                    <span className="">Platform Fee (10%)</span>
-                    <span className="font-medium">- ₹{platformFee.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                </div>
-                 <div className="flex justify-between font-bold border-t pt-2 mt-2">
-                    <span>You Will Receive</span>
-                    <span>₹{finalAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                </div>
-            </div>
-        )}
-      </div>
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button variant="outline" onClick={resetState}>Cancel</Button>
-        </DialogClose>
-        <Button onClick={handleConfirm} disabled={coinAmount <= 0 || !upiId}>Request Redemption</Button>
-      </DialogFooter>
+                 <DialogFooter>
+                    <DialogClose asChild>
+                    <Button variant="outline" onClick={resetState}>Cancel</Button>
+                    </DialogClose>
+                    <Button onClick={handleConfirm} disabled={!selectedGpPackage}>Request Code</Button>
+                </DialogFooter>
+            </TabsContent>
+        </Tabs>
     </>
   );
 
@@ -338,3 +404,5 @@ export function WalletActionDialog({
     </Dialog>
   );
 }
+
+    

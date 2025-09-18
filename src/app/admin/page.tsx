@@ -11,7 +11,7 @@ import { getCoinRequests, updateCoinRequestStatus } from '@/lib/requests';
 import { addTransaction, getTransactions } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { ArrowDownLeft, ArrowUpRight, Check, XIcon, Copy, Gift, CircleDollarSign } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Check, XIcon, Copy, Gift, CircleDollarSign, IndianRupee, Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -45,6 +45,8 @@ export default function AdminPage() {
                 ? `Redeem Code: ${request.redeemCode}`
                 : request.type === 'credit'
                 ? 'Coins from Admin'
+                : request.redemptionType === 'google_play'
+                ? `Redeemed for ${request.details}`
                 : 'Redeemed to Admin';
             
             // For debits (withdrawals), the transaction amount debited from the user's wallet
@@ -119,7 +121,13 @@ export default function AdminPage() {
                                 <TableCell>
                                      <div className="flex flex-col">
                                         <span className="font-bold flex items-center gap-1">
-                                            {request.type === 'debit' ? `₹${request.amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : (
+                                            {request.type === 'debit' ? (
+                                                request.redemptionType === 'google_play' ? (
+                                                     <>{request.details}</>
+                                                ) : (
+                                                    <><IndianRupee className="w-4 h-4" />{request.amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</>
+                                                )
+                                            ) : (
                                                 <><CircleDollarSign className="w-4 h-4" />{request.amount.toLocaleString()}</>
                                             )}
                                         </span>
@@ -131,7 +139,10 @@ export default function AdminPage() {
                                     </div>
                                 </TableCell>
                                 <TableCell className="text-xs">
-                                    {request.type === 'debit' && `UPI: ${request.upiId}`}
+                                     {request.redemptionType === 'upi' && `UPI: ${request.upiId}`}
+                                     {request.redemptionType === 'google_play' && (
+                                         <Badge variant="outline" className='gap-1'><Play className='w-3 h-3 text-green-500'/> Google Play</Badge>
+                                     )}
                                     {request.type === 'credit' && request.screenshot && `Screenshot: ${request.screenshot}`}
                                     {request.redeemCode && (
                                         <div className="flex items-center gap-2">
@@ -189,3 +200,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    

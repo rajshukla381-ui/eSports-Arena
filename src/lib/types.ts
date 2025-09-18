@@ -32,4 +32,8 @@ export type CoinRequest = {
   upiId?: string;
   screenshot?: string; // For simulation, we'll just store a name
   redeemCode?: string;
+  redemptionType?: 'upi' | 'google_play';
+  details?: string; // For storing '₹10 Google Play Code' etc.
 };
+
+    
