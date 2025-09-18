@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +19,7 @@ import { WalletActionDialog } from './wallet-action-dialog';
 
 type WalletHistoryProps = {
   transactions: Transaction[];
-  onWalletAction: (type: 'credit' | 'debit', amount: number) => void;
+  onWalletAction: (type: 'credit' | 'debit', amount: number, upiId?: string) => void;
 };
 
 export default function WalletHistory({ transactions, onWalletAction }: WalletHistoryProps) {
@@ -47,7 +48,7 @@ export default function WalletHistory({ transactions, onWalletAction }: WalletHi
           </WalletActionDialog>
           <WalletActionDialog
             action="debit"
-            onConfirm={(amount) => onWalletAction('debit', amount)}
+            onConfirm={(amount, upiId) => onWalletAction('debit', amount, upiId)}
           >
             <Button variant="outline">Withdraw</Button>
           </WalletActionDialog>

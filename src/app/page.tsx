@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -55,13 +56,23 @@ export default function Home() {
     });
   };
 
-  const handleWalletAction = (type: 'credit' | 'debit', amount: number) => {
-    if (type === 'debit' && amount > currentBalance) {
+  const handleWalletAction = (type: 'credit' | 'debit', amount: number, upiId?: string) => {
+    if (type === 'debit') {
+      if (amount > currentBalance) {
+        toast({
+          variant: 'destructive',
+          title: 'Insufficient Funds',
+          description: 'You cannot withdraw more than your current balance.',
+        });
+        return;
+      }
       toast({
-        variant: 'destructive',
-        title: 'Insufficient Funds',
-        description: 'You cannot withdraw more than your current balance.',
+        title: 'Withdrawal Request Sent',
+        description: `Your request to withdraw ₹${amount.toLocaleString()} to ${upiId} has been sent to the admin for approval.`,
       });
+      // In a real app, you would not deduct this immediately. 
+      // We are not creating a transaction here as it needs admin approval.
+      // We will just show a notification.
       return;
     }
 
