@@ -28,10 +28,10 @@ export default function Home() {
   }, [user, loading, router]);
 
 
-  useState(() => {
+  useEffect(() => {
     getTournaments().then(setTournaments);
     getTransactions().then(setTransactions);
-  });
+  }, []);
 
   const searchParams = useSearchParams();
   const tournamentId = searchParams.get('tournamentId');
@@ -106,9 +106,7 @@ export default function Home() {
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-screen-2xl mx-auto">
             <aside className="lg:col-span-4 xl:col-span-3 space-y-4">
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-[calc(100vh-10rem)]" />
             </aside>
             <section className="lg:col-span-8 xl:col-span-5">
               <Skeleton className="h-full w-full" />

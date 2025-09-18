@@ -1,4 +1,6 @@
 
+'use client';
+
 import { Swords, User, Shield, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -12,7 +14,7 @@ import {
 import { Button } from '../ui/button';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
-import { signOut } from '@/lib/firebase';
+import { signOut, auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '../ui/skeleton';
 
@@ -23,7 +25,7 @@ export function Header() {
   const isAdmin = user?.email === adminEmail;
 
   const handleSignOut = async () => {
-    await signOut();
+    await signOut(auth);
     router.push('/login');
   };
 
