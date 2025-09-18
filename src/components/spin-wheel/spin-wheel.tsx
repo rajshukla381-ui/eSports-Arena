@@ -49,10 +49,10 @@ const SpinWheel: React.FC<SpinWheelProps> = ({ onSpinFinish, startSpin }) => {
         {prizes.map((prize, i) => (
           <div
             key={i}
-            className={styles.slice}
+            className={cn(styles.slice, prize === 0 && styles.zeroPrize)}
             style={{ transform: `rotate(${i * anglePerSlice}deg)` }}
           >
-            <div className={cn(styles.sliceContent, prize > 0 ? 'text-primary-foreground' : 'text-muted-foreground')}>
+            <div className={styles.sliceContent}>
               {prize > 0 ? (
                 <>
                   <CircleDollarSign className="w-4 h-4" />
