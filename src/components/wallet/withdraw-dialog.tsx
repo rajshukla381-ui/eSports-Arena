@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -122,6 +123,7 @@ export function WithdrawDialog({ onConfirm, children, currentBalance }: Withdraw
 
   const numAmount = parseInt(amount) || 0;
   const { finalAmount, gst, platformFee } = calculateFees(numAmount);
+  const finalInr = finalAmount / 10;
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
@@ -145,7 +147,7 @@ export function WithdrawDialog({ onConfirm, children, currentBalance }: Withdraw
             <TabsContent value="upi">
                 <div className="space-y-4 py-4">
                     <div>
-                        <Label htmlFor="amount">Points to Withdraw</Label>
+                        <Label htmlFor="amount">Points to Withdraw (100 Coins = 10 INR)</Label>
                         <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder={`e.g., 5000 (Max: ${currentBalance.toLocaleString()})`} />
                     </div>
                     {numAmount > 0 && (
@@ -154,7 +156,7 @@ export function WithdrawDialog({ onConfirm, children, currentBalance }: Withdraw
                             <p className="flex justify-between">GST (18%): <span>- {gst.toLocaleString()} points</span></p>
                             <p className="flex justify-between">Platform Fee (10%): <span>- {platformFee.toLocaleString()} points</span></p>
                             <hr className="border-border my-1"/>
-                            <p className="flex justify-between font-bold text-foreground">Final Payout: <span>{finalAmount.toLocaleString()} points (₹{finalAmount})</span></p>
+                            <p className="flex justify-between font-bold text-foreground">Final Payout: <span>{finalAmount.toLocaleString()} points (₹{finalInr.toFixed(2)})</span></p>
                         </div>
                     )}
                     <div>
@@ -165,7 +167,7 @@ export function WithdrawDialog({ onConfirm, children, currentBalance }: Withdraw
             </TabsContent>
             <TabsContent value="google_play">
                 <div className="space-y-4 py-4">
-                    <Label>Select a Google Play Redeem Code Package</Label>
+                    <Label>Select a Google Play Redeem Code Package (177 Coins = 10 INR)</Label>
                     <RadioGroup value={selectedGPlayPackage} onValueChange={setSelectedGPlayPackage} className="max-h-[300px] overflow-y-auto pr-2 space-y-2">
                         {googlePlayPackages.map(pkg => (
                             <Label key={pkg.id} htmlFor={pkg.id} className="flex items-center justify-between p-4 border rounded-md cursor-pointer hover:border-primary has-[:checked]:border-primary has-[:checked]:shadow-glow-primary">
