@@ -20,7 +20,7 @@ export type Transaction = {
   description: string;
   amount: number;
   type: 'credit' | 'debit';
-  userId?: string; // Keep track of user for crediting wins
+  userId: string;
 };
 
 export type CoinRequest = {

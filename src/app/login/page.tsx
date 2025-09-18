@@ -1,113 +1,109 @@
 
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Swords, Mail } from 'lucide-react';
+import { Swords, User, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { useEffect, useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
-export default function LoginPage() {
+const ADMIN_SECRET_ANSWER = "Raj"; // The answer to the secret question
+
+export default function RoleSelectionPage() {
   const router = useRouter();
-  const { signIn, user, loading, error } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isEmailSent, setIsEmailSent] = useState(false);
+  const { signInAsGuest, signInAsAdmin } = useAuth();
   const { toast } = useToast();
+  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
+  const [secretAnswer, setSecretAnswer] = useState('');
 
-  useEffect(() => {
-    if (!loading && user) {
-      router.push('/');
-    }
-  }, [user, loading, router]);
-
-  const handleSignIn = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-        toast({
-            variant: 'destructive',
-            title: 'Fields required',
-            description: 'Please enter your email and password.',
-        })
-        return;
-    }
-    const success = await signIn(email, password);
-    if (success) {
-      // User will be redirected by useEffect
-    }
+  const handleUserSelection = () => {
+    signInAsGuest();
+    router.push('/');
   };
 
-  useEffect(() => {
-      if (error) {
-          toast({
-              variant: 'destructive',
-              title: 'Authentication Error',
-              description: error,
-          });
-      }
-  }, [error, toast]);
+  const handleAdminSelection = () => {
+    setIsAdminDialogOpen(true);
+  };
 
-
-  if (loading && !user) {
-      return (
-          <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
-              <p>Loading...</p>
-          </div>
-      )
-  }
+  const handleAdminLogin = () => {
+    if (signInAsAdmin(secretAnswer)) {
+      toast({
+        title: 'Admin Access Granted',
+        description: 'Welcome, Admin!',
+      });
+      router.push('/');
+      setIsAdminDialogOpen(false);
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Access Denied',
+        description: 'The answer is incorrect.',
+      });
+    }
+    setSecretAnswer('');
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
       <div className="flex flex-col items-center gap-6 p-8 rounded-lg shadow-glow-primary bg-card border w-full max-w-sm">
-         <div className="flex flex-col items-center gap-2 text-center">
-            <Swords className="h-16 w-16 text-primary" />
-            <h1 className="text-3xl font-bold text-glow-primary tracking-wider">
-                eSports Arena
-            </h1>
-            <p className="text-muted-foreground">Sign in to join and create tournaments</p>
+        <div className="flex flex-col items-center gap-2 text-center">
+          <Swords className="h-16 w-16 text-primary" />
+          <h1 className="text-3xl font-bold text-glow-primary tracking-wider">
+            eSports Arena
+          </h1>
+          <p className="text-muted-foreground">Are you a User or an Admin?</p>
         </div>
-        
-        {isEmailSent ? (
-            <div className="text-center p-4 bg-primary/10 border border-primary/20 rounded-md">
-                <Mail className="h-12 w-12 text-primary mx-auto mb-4" />
-                <h2 className="text-xl font-bold">Check your email</h2>
-                <p className="text-muted-foreground mt-2">
-                    A sign-in link has been sent to <strong>{email}</strong>. Click the link to log in.
-                </p>
-            </div>
-        ) : (
-            <form className="w-full space-y-4" onSubmit={(e) => { e.preventDefault(); handleSignIn(e as any); }}>
-                <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input 
-                        id="email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input 
-                        id="password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                </div>
-                <Button onClick={handleSignIn} size="lg" className="w-full" disabled={loading}>
-                    Sign In
-                </Button>
-            </form>
-        )}
+
+        <div className="w-full space-y-4">
+          <Button size="lg" className="w-full" onClick={handleUserSelection}>
+            <User className="mr-2" />
+            I am a User
+          </Button>
+          <Button size="lg" variant="outline" className="w-full" onClick={handleAdminSelection}>
+            <ShieldCheck className="mr-2" />
+            I am an Admin
+          </Button>
+        </div>
       </div>
+
+      <Dialog open={isAdminDialogOpen} onOpenChange={setIsAdminDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Admin Verification</DialogTitle>
+            <DialogDescription>
+              To access the admin panel, please answer the security question.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Label htmlFor="secret-answer">Your Brother Professional?</Label>
+            <Input
+              id="secret-answer"
+              value={secretAnswer}
+              onChange={(e) => setSecretAnswer(e.target.value)}
+              placeholder="Enter the answer"
+              onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
+            />
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleAdminLogin}>Submit</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

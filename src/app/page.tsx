@@ -22,7 +22,8 @@ export default function Home() {
   const { toast } = useToast();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const isAdmin = user?.email === 'rajshukla381@gmail.com';
+  const isAdmin = user?.role === 'admin';
+  const userEmail = user ? user.email : 'guest';
 
   useEffect(() => {
     if (!authLoading && !user) {

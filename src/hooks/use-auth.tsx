@@ -1,147 +1,75 @@
 
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { 
-  auth, 
-  sendSignInLinkToEmail, 
-  isSignInWithEmailLink,
-  signInWithEmailLink,
-  signInWithEmailAndPassword,
-  firebaseSignOut,
-  actionCodeSettings
-} from '@/lib/firebase';
-import type { User as FirebaseAuthUser } from 'firebase/auth';
 
 type User = {
   email: string;
+  role: 'guest' | 'admin';
 };
 
 type AuthContextType = {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, password?: string) => Promise<boolean>;
+  signInAsGuest: () => void;
+  signInAsAdmin: (secret: string) => boolean;
   signOut: () => void;
-  error: string | null;
 };
 
-const EMAIL_FOR_SIGN_IN_KEY = 'emailForSignIn';
+const AUTH_USER_KEY = 'authUser';
+const ADMIN_EMAIL = 'rajshukla381@gmail.com';
+const ADMIN_SECRET_ANSWER = "Raj";
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  signIn: async () => false,
+  signInAsGuest: () => {},
+  signInAsAdmin: () => false,
   signOut: () => {},
-  error: null,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const handleSignInWithEmailLink = useCallback(async () => {
-    if (isSignInWithEmailLink(auth, window.location.href)) {
-      setLoading(true);
-      let email = window.localStorage.getItem(EMAIL_FOR_SIGN_IN_KEY);
-      if (!email) {
-        email = window.prompt('Please provide your email for confirmation');
-      }
-
-      if (email) {
-        try {
-          const result = await signInWithEmailLink(auth, email, window.location.href);
-          window.localStorage.removeItem(EMAIL_FOR_SIGN_IN_KEY);
-          if (result.user && result.user.email) {
-            setUser({ email: result.user.email });
-          }
-        } catch (error: any) {
-          setError(error.message);
-          console.error("Sign in with email link failed:", error);
-        }
-      }
-      // Clear the URL of the sign-in link query parameters
-      router.replace(window.location.pathname);
-      setLoading(false);
-    }
-  }, [router]);
-
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && isSignInWithEmailLink(auth, window.location.href)) {
-      handleSignInWithEmailLink();
+    try {
+      const storedUser = window.localStorage.getItem(AUTH_USER_KEY);
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch (error) {
+      console.error("Could not parse user from localStorage", error);
     }
-  }, [searchParams, handleSignInWithEmailLink]);
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((firebaseUser: FirebaseAuthUser | null) => {
-      if (firebaseUser && firebaseUser.email) {
-        setUser({ email: firebaseUser.email });
-      } else {
-        setUser(null);
-      }
-      
-      // Only set loading to false if not in the middle of email link sign-in
-      if (typeof window !== 'undefined' && !isSignInWithEmailLink(auth, window.location.href)) {
-        setLoading(false);
-      } else if (typeof window === 'undefined') {
-        setLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
+    setLoading(false);
   }, []);
 
-  const signIn = async (email: string, password?: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      if (password) {
-        await signInWithEmailAndPassword(auth, email, password);
-      } else {
-        // Fallback or other method
-        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-        window.localStorage.setItem(EMAIL_FOR_SIGN_IN_KEY, email);
-      }
-      setLoading(false);
-      return true;
-    } catch (error: any) {
-      console.error("Sign in failed:", error);
-      // Create user if they don't exist
-      if (error.code === 'auth/user-not-found' && password) {
-          try {
-              const { createUserWithEmailAndPassword } = await import('firebase/auth');
-              await createUserWithEmailAndPassword(auth, email, password);
-              setLoading(false);
-              return true;
-          } catch (creationError: any) {
-               setError(creationError.message);
-               setLoading(false);
-               return false;
-          }
-      }
-      setError(error.message);
-      setLoading(false);
-      return false;
-    }
+  const signInAsGuest = () => {
+    const guestUser: User = { email: `guest_${Date.now()}`, role: 'guest' };
+    window.localStorage.setItem(AUTH_USER_KEY, JSON.stringify(guestUser));
+    setUser(guestUser);
   };
 
-  const signOut = async () => {
-    try {
-        await firebaseSignOut(auth);
-        setUser(null);
-        router.push('/login');
-    } catch (error) {
-        console.error("Sign out failed:", error);
-        setError((error as Error).message);
+  const signInAsAdmin = (secret: string) => {
+    if (secret === ADMIN_SECRET_ANSWER) {
+      const adminUser: User = { email: ADMIN_EMAIL, role: 'admin' };
+      window.localStorage.setItem(AUTH_USER_KEY, JSON.stringify(adminUser));
+      setUser(adminUser);
+      return true;
     }
+    return false;
+  };
+
+  const signOut = () => {
+    window.localStorage.removeItem(AUTH_USER_KEY);
+    setUser(null);
+    router.push('/login');
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut, error }}>
+    <AuthContext.Provider value={{ user, loading, signInAsGuest, signInAsAdmin, signOut }}>
       {children}
     </AuthContext.Provider>
   );

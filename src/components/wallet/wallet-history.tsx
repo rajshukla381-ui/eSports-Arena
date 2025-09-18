@@ -27,7 +27,7 @@ type WalletHistoryProps = {
 
 export default function WalletHistory({ transactions, onWalletAction, onRedeemCode, onNewTransaction }: WalletHistoryProps) {
   const { user } = useAuth();
-  const isAdmin = user?.email === 'rajshukla381@gmail.com';
+  const isAdmin = user?.role === 'admin';
 
   const currentBalance = transactions.reduce((acc, t) => {
     return t.type === 'credit' ? acc + t.amount : acc - t.amount;

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Swords, User, Shield, LogOut, Ticket, Bell } from 'lucide-react';
+import { Swords, User, Shield, LogOut, Ticket, Bell, UserCog } from 'lucide-react';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 import {
@@ -20,7 +20,7 @@ import { NotificationBell } from '../notifications/notification-bell';
 export function Header() {
   const userAvatar = placeholderImages.find(p => p.id === 'user-avatar');
   const { user, signOut } = useAuth();
-  const isAdmin = user?.email === 'rajshukla381@gmail.com';
+  const isAdmin = user?.role === 'admin';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -44,19 +44,23 @@ export function Header() {
                     className="relative h-10 w-10 rounded-full"
                   >
                     <Avatar>
-                        <AvatarImage
-                          src={userAvatar?.imageUrl}
-                          alt="User Avatar"
-                          data-ai-hint={userAvatar?.imageHint}
-                        />
-                      <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
+                        {isAdmin && userAvatar && (
+                             <AvatarImage
+                                src={userAvatar?.imageUrl}
+                                alt="User Avatar"
+                                data-ai-hint={userAvatar?.imageHint}
+                            />
+                        )}
+                      <AvatarFallback>
+                          {isAdmin ? user.email?.[0].toUpperCase() : <UserCog />}
+                      </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{isAdmin ? 'Admin' : 'Player'}</p>
+                      <p className="text-sm font-medium leading-none">{isAdmin ? 'Admin' : 'Guest'}</p>
                       <p className="text-xs leading-none text-muted-foreground">
                         {user.email}
                       </p>
