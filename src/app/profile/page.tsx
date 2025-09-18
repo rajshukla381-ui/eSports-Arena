@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,8 +43,13 @@ export default function ProfilePage() {
   const [prizePool, setPrizePool] = useState('');
   const [host, setHost] = useState('');
   const [rules, setRules] = useState('');
-  const [matchTime, setMatchTime] = useState(new Date().toISOString().slice(0, 16));
+  const [matchTime, setMatchTime] = useState('');
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+
+  useEffect(() => {
+    // Set initial match time only on the client to avoid hydration mismatch
+    setMatchTime(new Date().toISOString().slice(0, 16));
+  }, []);
 
   const adminUpiId = '9106059600@fam';
   const feePercentage = 0.20;
