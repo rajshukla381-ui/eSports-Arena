@@ -26,8 +26,8 @@ export type CoinRequest = {
   userId: string;
   date: string;
   type: 'credit' | 'debit';
-  amount: number; // Final amount after deductions for debits
-  originalAmount?: number; // Original amount before deductions for debits
+  amount: number; // Final amount after deductions for debits (INR), or coin amount for credits
+  originalAmount?: number; // Original coin amount before deductions for debits
   status: 'pending' | 'approved' | 'rejected';
   upiId?: string;
   screenshot?: string; // For simulation, we'll just store a name

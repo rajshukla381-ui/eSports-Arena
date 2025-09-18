@@ -117,14 +117,15 @@ export default function AdminPage() {
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex flex-col">
+                                     <div className="flex flex-col">
                                         <span className="font-bold flex items-center gap-1">
-                                            <CircleDollarSign className="w-4 h-4" />
-                                            {request.amount.toLocaleString()}
+                                            {request.type === 'debit' ? `₹${request.amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : (
+                                                <><CircleDollarSign className="w-4 h-4" />{request.amount.toLocaleString()}</>
+                                            )}
                                         </span>
                                         {request.originalAmount && (
-                                            <span className="text-xs text-muted-foreground">
-                                                (Original: {request.originalAmount.toLocaleString()})
+                                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                (from <CircleDollarSign className="w-3 h-3"/>{request.originalAmount.toLocaleString()})
                                             </span>
                                         )}
                                     </div>

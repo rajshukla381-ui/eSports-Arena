@@ -34,6 +34,7 @@ type WalletActionDialogProps = {
 
 const GST_RATE = 0.28;
 const PLATFORM_FEE_RATE = 0.10;
+const COIN_TO_INR_RATE = 0.1; // 10 coins = 1 INR
 
 export function WalletActionDialog({
   action,
@@ -107,8 +108,8 @@ export function WalletActionDialog({
         });
 
     } else { // Debit action
-        const numAmount = parseFloat(amount);
-        if (isNaN(numAmount) || numAmount <= 0) {
+        const coinAmount = parseFloat(amount);
+        if (isNaN(coinAmount) || coinAmount <= 0) {
             toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid amount.' });
             return;
         }
@@ -117,14 +118,15 @@ export function WalletActionDialog({
             return;
         }
 
-        const gst = numAmount * GST_RATE;
-        const platformFee = numAmount * PLATFORM_FEE_RATE;
-        const finalAmount = numAmount - gst - platformFee;
+        const inrValue = coinAmount * COIN_TO_INR_RATE;
+        const gst = inrValue * GST_RATE;
+        const platformFee = inrValue * PLATFORM_FEE_RATE;
+        const finalAmount = inrValue - gst - platformFee;
 
         onConfirm({
             type: 'debit',
-            amount: finalAmount,
-            originalAmount: numAmount,
+            amount: finalAmount, // Final INR amount
+            originalAmount: coinAmount, // Original Coin amount
             upiId: upiId,
         });
     }
@@ -252,18 +254,19 @@ export function WalletActionDialog({
     </>
   );
 
-  const numAmount = parseFloat(amount) || 0;
-  const gst = numAmount * GST_RATE;
-  const platformFee = numAmount * PLATFORM_FEE_RATE;
+  const coinAmount = parseFloat(amount) || 0;
+  const inrValue = coinAmount * COIN_TO_INR_RATE;
+  const gst = inrValue * GST_RATE;
+  const platformFee = inrValue * PLATFORM_FEE_RATE;
   const totalDeductions = gst + platformFee;
-  const finalAmount = numAmount - totalDeductions;
+  const finalAmount = inrValue - totalDeductions;
 
   const debitContent = (
     <>
       <DialogHeader>
         <DialogTitle>Redeem Coins</DialogTitle>
         <DialogDescription>
-          Enter your UPI ID and the amount to redeem. 28% GST and 10% platform fees will be applied.
+          Enter the coin amount to redeem. 28% GST and 10% platform fees will be applied to the real money value (10 coins = ₹1).
         </DialogDescription>
       </DialogHeader>
       <div className="grid gap-4 py-4">
@@ -292,19 +295,23 @@ export function WalletActionDialog({
             placeholder="example@upi"
           />
         </div>
-        {numAmount > 0 && (
+        {coinAmount > 0 && (
             <div className="col-span-4 p-4 mt-2 space-y-2 text-sm border rounded-md bg-muted/50">
                 <div className="flex justify-between">
-                    <span className="text-muted-foreground">GST (28%)</span>
-                    <span className="font-medium">- {gst.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    <span className="text-muted-foreground">Value (10 coins = ₹1)</span>
+                    <span className="font-medium">₹{inrValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
-                 <div className="flex justify-between">
-                    <span className="text-muted-foreground">Platform Fee (10%)</span>
-                    <span className="font-medium">- {platformFee.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                <div className="flex justify-between text-destructive">
+                    <span className="">GST (28%)</span>
+                    <span className="font-medium">- ₹{gst.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                 <div className="flex justify-between text-destructive">
+                    <span className="">Platform Fee (10%)</span>
+                    <span className="font-medium">- ₹{platformFee.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
                  <div className="flex justify-between font-bold border-t pt-2 mt-2">
                     <span>You Will Receive</span>
-                    <span>{finalAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    <span>₹{finalAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
             </div>
         )}
@@ -313,7 +320,7 @@ export function WalletActionDialog({
         <DialogClose asChild>
           <Button variant="outline" onClick={resetState}>Cancel</Button>
         </DialogClose>
-        <Button onClick={handleConfirm} disabled={numAmount <= 0 || !upiId}>Request Redemption</Button>
+        <Button onClick={handleConfirm} disabled={coinAmount <= 0 || !upiId}>Request Redemption</Button>
       </DialogFooter>
     </>
   );
