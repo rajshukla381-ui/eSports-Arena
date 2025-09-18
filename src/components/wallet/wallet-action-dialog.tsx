@@ -21,6 +21,9 @@ import { Copy, Upload, CircleDollarSign, Gift } from 'lucide-react';
 import { coinPackages } from '@/lib/coin-packages.json';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { redeemCode } from '@/ai/flows/redeem-code';
+import { addTransaction } from '@/lib/data';
+import { useAuth } from '@/hooks/use-auth';
 
 type WalletActionDialogProps = {
   action: 'credit' | 'debit';
@@ -41,9 +44,44 @@ export function WalletActionDialog({
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [screenshotName, setScreenshotName] = useState('');
   const [selectedPackage, setSelectedPackage] = useState<(typeof coinPackages[0]) | null>(null);
+  const [redeemCodeInput, setRedeemCodeInput] = useState('');
+  const [isRedeeming, setIsRedeeming] = useState(false);
+  const { user } = useAuth();
   
   const { toast } = useToast();
   const adminUpiId = '9106059600@fam';
+  const [activeTab, setActiveTab] = useState('buy-coins');
+
+
+  const handleRedeemCode = async () => {
+    if (!redeemCodeInput || !user) return;
+    setIsRedeeming(true);
+    const result = await redeemCode({ code: redeemCodeInput });
+    if (result.success) {
+      await addTransaction({
+        userId: user.email,
+        date: new Date().toISOString(),
+        description: 'Redeemed Code',
+        amount: result.amount,
+        type: 'credit',
+      });
+      toast({
+        title: 'Code Redeemed!',
+        description: result.message,
+      });
+      onNewTransaction();
+      resetState();
+      setOpen(false);
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Redemption Failed',
+        description: result.message,
+      });
+    }
+    setIsRedeeming(false);
+  };
+
 
   const handleConfirm = () => {
     const numAmount = selectedPackage ? selectedPackage.amount : parseFloat(amount);
@@ -66,7 +104,7 @@ export function WalletActionDialog({
             return;
         }
 
-        if (activeTab === 'upi' && !screenshot) {
+        if (!screenshot) {
              toast({
                 variant: 'destructive',
                 title: 'Screenshot Required',
@@ -75,13 +113,7 @@ export function WalletActionDialog({
             return;
         }
 
-        // Simulate Google Play payment
-        if (activeTab === 'google-play') {
-            onConfirm(numAmount, undefined, undefined);
-            onNewTransaction();
-        } else { // UPI payment
-            onConfirm(numAmount, undefined, screenshot!);
-        }
+        onConfirm(numAmount, undefined, screenshot!);
 
     } else { // Debit action
         if (!upiId) {
@@ -105,7 +137,8 @@ export function WalletActionDialog({
     setScreenshot(null);
     setScreenshotName('');
     setSelectedPackage(null);
-    setActiveTab('upi');
+    setActiveTab('buy-coins');
+    setRedeemCodeInput('');
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,17 +153,6 @@ export function WalletActionDialog({
     navigator.clipboard.writeText(adminUpiId);
     toast({ title: 'Copied!', description: 'UPI ID copied to clipboard.' });
   }
-  
-  const [activeTab, setActiveTab] = useState('upi');
-
-  const GooglePlayIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24">
-        <path fill="#4CAF50" d="M3.1,2.5l9,5.2l-9,5.2V2.5z"/>
-        <path fill="#F44336" d="M3,12.9l9.2,5.3L20.8,12l-8.6-4.9L3,12.9z"/>
-        <path fill="#FFC107" d="M3.1,18.1l9-5.2V2.5L3.1,7.7V18.1z"/>
-        <path fill="#2196F3" d="M12.1,12.9l8.6-4.9L12.1,2.5v10.4H12.1z"/>
-    </svg>
-  );
 
   const creditContent = (
     <>
@@ -140,37 +162,37 @@ export function WalletActionDialog({
             Choose how you want to add coins to your wallet.
             </DialogDescription>
         </DialogHeader>
-        <div className="py-4 space-y-4">
-            <p className="text-sm text-muted-foreground px-1">
-                Select a coin package to get started.
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[200px] overflow-y-auto pr-2">
-                {coinPackages.map(pkg => (
-                    <div key={pkg.id} 
-                        className={cn(
-                            "relative border-2 rounded-lg p-3 text-center cursor-pointer transition-all bg-card hover:border-primary/80",
-                            selectedPackage?.id === pkg.id ? 'border-primary shadow-glow-primary' : 'border-transparent'
-                        )}
-                        onClick={() => setSelectedPackage(pkg)}>
-                        <Image src={pkg.imageUrl} alt={`${pkg.amount} coins`} width={100} height={100} className="mx-auto mb-2" data-ai-hint={pkg.imageHint} />
-                        <div>
-                        <div className="font-bold flex items-center justify-center gap-1 text-lg">
-                            <CircleDollarSign className="w-5 h-5 text-primary" /> {pkg.amount.toLocaleString()}
-                        </div>
-                        <div className="text-sm text-muted-foreground">₹{pkg.price.toLocaleString()}</div>
-                        </div>
+       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="buy-coins"><CircleDollarSign className="w-4 h-4 mr-2"/>Buy Coins</TabsTrigger>
+                <TabsTrigger value="redeem-code"><Gift className="w-4 h-4 mr-2"/>Redeem Code</TabsTrigger>
+            </TabsList>
+            <TabsContent value="buy-coins">
+                <div className="py-4 space-y-4">
+                    <p className="text-sm text-muted-foreground px-1">
+                        Select a coin package to get started.
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[200px] overflow-y-auto pr-2">
+                        {coinPackages.map(pkg => (
+                            <div key={pkg.id} 
+                                className={cn(
+                                    "relative border-2 rounded-lg p-3 text-center cursor-pointer transition-all bg-card hover:border-primary/80",
+                                    selectedPackage?.id === pkg.id ? 'border-primary shadow-glow-primary' : 'border-transparent'
+                                )}
+                                onClick={() => setSelectedPackage(pkg)}>
+                                <Image src={pkg.imageUrl} alt={`${pkg.amount} coins`} width={100} height={100} className="mx-auto mb-2" data-ai-hint={pkg.imageHint} />
+                                <div>
+                                <div className="font-bold flex items-center justify-center gap-1 text-lg">
+                                    <CircleDollarSign className="w-5 h-5 text-primary" /> {pkg.amount.toLocaleString()}
+                                </div>
+                                <div className="text-sm text-muted-foreground">₹{pkg.price.toLocaleString()}</div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                ))}
-            </div>
-        </div>
+                </div>
 
-        {selectedPackage && (
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="upi"><Upload className="w-4 h-4 mr-2"/>Pay via UPI</TabsTrigger>
-                    <TabsTrigger value="google-play"><GooglePlayIcon />Pay with Google</TabsTrigger>
-                </TabsList>
-                <TabsContent value="upi">
+                {selectedPackage && (
                     <div className="py-4 space-y-4 animate-in fade-in-0">
                         <div className="bg-muted/50 p-4 rounded-md text-center space-y-2">
                             <Label>Pay ₹{selectedPackage.price.toLocaleString()} to this UPI ID</Label>
@@ -196,32 +218,35 @@ export function WalletActionDialog({
                             </div>
                         </div>
                     </div>
-                    <DialogFooter>
-                        <DialogClose asChild>
+                )}
+                 <DialogFooter>
+                    <DialogClose asChild>
+                    <Button variant="outline" onClick={resetState}>Cancel</Button>
+                    </DialogClose>
+                    <Button onClick={handleConfirm} disabled={!selectedPackage || !screenshot}>Send Request</Button>
+                </DialogFooter>
+            </TabsContent>
+            <TabsContent value="redeem-code">
+                 <div className="space-y-4 py-4">
+                    <Label htmlFor="redeem-code-input">Enter your code</Label>
+                    <Input
+                        id="redeem-code-input"
+                        value={redeemCodeInput}
+                        onChange={(e) => setRedeemCodeInput(e.target.value)}
+                        placeholder="e.g., WINNER123"
+                    />
+                    <p className="text-xs text-muted-foreground">Enter "WINNER123" to get 500 bonus coins!</p>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
                         <Button variant="outline" onClick={resetState}>Cancel</Button>
-                        </DialogClose>
-                        <Button onClick={handleConfirm} disabled={!selectedPackage || !screenshot}>Send Request</Button>
-                    </DialogFooter>
-                </TabsContent>
-                <TabsContent value="google-play">
-                    <div className="space-y-4 py-4 text-center">
-                        <p className="text-muted-foreground">
-                            You are about to purchase {selectedPackage.amount.toLocaleString()} coins for ₹{selectedPackage.price.toLocaleString()} using Google Play.
-                        </p>
-                        <GooglePlayIcon />
-                        <p className="text-xs text-muted-foreground">This is a simulated payment for demonstration.</p>
-                    </div>
-                    <DialogFooter>
-                        <DialogClose asChild>
-                            <Button variant="outline" onClick={resetState}>Cancel</Button>
-                        </DialogClose>
-                        <Button onClick={handleConfirm} disabled={!selectedPackage}>
-                            Pay ₹{selectedPackage.price}
-                        </Button>
-                    </DialogFooter>
-                </TabsContent>
-            </Tabs>
-        )}
+                    </DialogClose>
+                    <Button onClick={handleRedeemCode} disabled={!redeemCodeInput || isRedeeming}>
+                        {isRedeeming ? 'Redeeming...' : 'Redeem'}
+                    </Button>
+                </DialogFooter>
+            </TabsContent>
+        </Tabs>
     </>
   );
 

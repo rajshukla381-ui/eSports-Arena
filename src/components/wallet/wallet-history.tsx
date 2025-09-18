@@ -17,8 +17,6 @@ import { ArrowDownLeft, ArrowUpRight, CircleDollarSign, Infinity } from 'lucide-
 import { Button } from '../ui/button';
 import { WalletActionDialog } from './wallet-action-dialog';
 import { useAuth } from '@/hooks/use-auth';
-import { useToast } from '@/hooks/use-toast';
-import { addTransaction } from '@/lib/data';
 
 type WalletHistoryProps = {
   transactions: Transaction[];
@@ -29,28 +27,10 @@ type WalletHistoryProps = {
 export default function WalletHistory({ transactions, onWalletAction, onNewTransaction }: WalletHistoryProps) {
   const { user } = useAuth();
   const isAdmin = user?.email === 'rajshukla381@gmail.com';
-  const { toast } = useToast();
 
   const currentBalance = transactions.reduce((acc, t) => {
     return t.type === 'credit' ? acc + t.amount : acc - t.amount;
   }, 0);
-
-  const handleSimulatedGooglePlayPurchase = async (amount: number) => {
-    if (!user) return;
-    
-    await addTransaction({
-      userId: user.email,
-      date: new Date().toISOString(),
-      description: 'Google Play Purchase',
-      amount: amount,
-      type: 'credit',
-    });
-    toast({
-      title: 'Purchase Successful',
-      description: `You received ${amount.toLocaleString()} coins!`,
-    });
-    onNewTransaction();
-  };
 
 
   return (
@@ -73,11 +53,7 @@ export default function WalletHistory({ transactions, onWalletAction, onNewTrans
           <WalletActionDialog
             action="credit"
             onConfirm={(amount, _, screenshot) => {
-                if (screenshot) { // UPI payment
-                    onWalletAction('credit', amount, undefined, screenshot)
-                } else { // Google Play payment
-                    handleSimulatedGooglePlayPurchase(amount);
-                }
+                onWalletAction('credit', amount, undefined, screenshot)
             }}
             onNewTransaction={onNewTransaction}
           >
