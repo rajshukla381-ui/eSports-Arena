@@ -3,6 +3,8 @@
 
 import { useRouter } from 'next/navigation';
 import { createContext, useContext, useEffect, useState } from 'react';
+import { auth, provider, signInWithPopup, signOut as firebaseSignOut } from '@/lib/firebase';
+import type { User as FirebaseAuthUser } from 'firebase/auth';
 
 type User = {
   email: string;
@@ -11,7 +13,7 @@ type User = {
 type AuthContextType = {
   user: User | null;
   loading: boolean;
-  signIn: (email: string) => void;
+  signIn: () => void;
   signOut: () => void;
 };
 
@@ -22,36 +24,47 @@ const AuthContext = createContext<AuthContextType>({
   signOut: () => {},
 });
 
-const AUTH_STORAGE_KEY = 'user_email';
-
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    try {
-      const storedEmail = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (storedEmail) {
-        setUser({ email: storedEmail });
+    const unsubscribe = auth.onAuthStateChanged((firebaseUser: FirebaseAuthUser | null) => {
+      if (firebaseUser && firebaseUser.email) {
+        setUser({ email: firebaseUser.email });
+      } else {
+        setUser(null);
       }
-    } catch (error) {
-      // localStorage is not available
-    } finally {
       setLoading(false);
-    }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const signIn = (email: string) => {
-    setUser({ email });
-    localStorage.setItem(AUTH_STORAGE_KEY, email);
-    router.push('/');
+  const signIn = async () => {
+    try {
+      setLoading(true);
+      const result = await signInWithPopup(auth, provider);
+      if (result.user && result.user.email) {
+        setUser({ email: result.user.email });
+        router.push('/');
+      }
+    } catch (error) {
+      console.error("Authentication failed:", error);
+    } finally {
+        setLoading(false);
+    }
   };
 
-  const signOut = () => {
-    setUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    router.push('/login');
+  const signOut = async () => {
+    try {
+        await firebaseSignOut(auth);
+        setUser(null);
+        router.push('/login');
+    } catch (error) {
+        console.error("Sign out failed:", error);
+    }
   };
 
   return (
